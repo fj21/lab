@@ -1,0 +1,60 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: lab
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/lab?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 1234
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+    elasticsearch:
+      repositories:
+        enabled: true
+      uris: http://localhost:9200
+  rocketmq:
+    name-server: localhost:9876
+    producer:
+      group: lab-producer-group
+      send-message-timeout: 3000
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.cqu.lab.model.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: auto
+
+redisson:
+  single-server-config:
+    address: redis://localhost:6379
+    password:
+    database: 0
+
+jwt:
+  secret: labSecretKey_1234567890_abcdefghijklmnopqrstuvwxyz
+  expiration: 86400000  # 24小时 = 86400000毫秒
+
+elasticsearch:
+  host: localhost
+  port: 9200
+  user-index: lab_users 
