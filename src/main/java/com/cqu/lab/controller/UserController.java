@@ -7,6 +7,7 @@ import com.cqu.lab.model.dto.UserUpdateDTO;
 import com.cqu.lab.model.vo.UserBasicVO;
 import com.cqu.lab.model.vo.UserVO;
 import com.cqu.lab.service.UserService;
+import com.cqu.lab.utils.ThreadLocalUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,7 @@ public class UserController {
      */
     @GetMapping("/info")
     public Result<UserVO> getCurrentUserInfo() {
-        Integer userId = getCurrentUserId();
+        Integer userId = ThreadLocalUtil.getUserId();
         log.info("获取当前用户信息, 用户ID: {}", userId);
         return Result.success(userService.getUserInfo(userId));
     }
@@ -74,7 +75,7 @@ public class UserController {
      */
     @PutMapping("/update")
     public Result<Boolean> updateUserInfo(@Valid @RequestBody UserUpdateDTO updateDTO) {
-        Integer userId = getCurrentUserId();
+        Integer userId = ThreadLocalUtil.getUserId();
         log.info("更新用户信息, 用户ID: {}", userId);
         
         // 确保更新的是当前用户的信息
@@ -82,17 +83,5 @@ public class UserController {
         
         boolean success = userService.updateUserInfo(updateDTO);
         return success ? Result.success(true, "更新成功") : Result.failed("更新失败");
-    }
-    
-    /**
-     * 获取当前登录用户ID
-     */
-    private Integer getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            return Integer.valueOf(userDetails.getUsername());
-        }
-        throw new RuntimeException("未登录或登录已过期");
     }
 } 

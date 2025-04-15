@@ -83,4 +83,35 @@ CREATE TABLE `private_message` (
                                       PRIMARY KEY  (`id`)
 )  ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='私信信息表';
 
+-- 用户点赞表
+DROP TABLE IF EXISTS `post_like`;
+CREATE TABLE `post_like` (
+                             `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+                             `author_id` int unsigned NOT NULL COMMENT '发布帖子的用户',
+                             `video_id` bigint unsigned NOT NULL COMMENT '被点赞的帖子',
+                             `user_id` int unsigned NOT NULL COMMENT '点赞的用户',
+                             `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                             PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户点赞表';
+
+-- 用户收藏表
+DROP TABLE IF EXISTS `post_collect`;
+CREATE TABLE `post_collect` (
+                                `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                `author_id` int unsigned NOT NULL COMMENT '发布视频的用户',
+                                `video_id` bigint unsigned NOT NULL COMMENT '被收藏的视频',
+                                `user_id` int unsigned NOT NULL COMMENT '收藏的用户',
+                                `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户收藏表';
+
+-- 用户关注表
+DROP TABLE IF EXISTS `follow `;
+CREATE TABLE `tb_follow ` (
+                              `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+                              `follow_id` int unsigned NOT NULL COMMENT '被关注的用户',
+                              `user_id` int unsigned NOT NULL COMMENT '操作关注用户',
+                              `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                              PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户关注表';
 

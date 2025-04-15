@@ -19,17 +19,7 @@ public class Constants {
      * 用户信息缓存过期时间（1小时）
      */
     public static final long USER_CACHE_EXPIRE_TIME = 3600L;
-    
-    /**
-     * JWT令牌前缀
-     */
-    public static final String JWT_TOKEN_PREFIX = "Bearer ";
-    
-    /**
-     * JWT存储的请求头
-     */
-    public static final String JWT_HEADER = "Authorization";
-    
+
     /**
      * 用户更新消息主题
      */
@@ -59,4 +49,13 @@ public class Constants {
      * 用户状态：锁定
      */
     public static final int USER_STATUS_LOCKED = 1;
-} 
+    /**
+     * token前缀
+     */
+    public static final String REDIS_TOEKN_KEY ="lab:token:" ;
+
+    /**
+     * 过期时间
+     */
+    public static final Integer TOKEN_EXPIRE_TIME = 7200;
+}
