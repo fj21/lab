@@ -13,7 +13,7 @@ spring:
     redis:
       host: localhost
       port: 6379
-      password: 
+      password: 123456
       database: 0
       lettuce:
         pool:
@@ -30,28 +30,35 @@ spring:
     producer:
       group: lab-producer-group
       send-message-timeout: 3000
-
+  autoconfigure:
+    import: org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.cqu.lab.model.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 设置默认枚举处理器
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
   global-config:
     db-config:
       logic-delete-field: is_deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
       id-type: auto
+      # 表名前缀
+      table-prefix: ""
+      # 大写命名
+      capital-mode: false
 
 redisson:
   single-server-config:
     address: redis://localhost:6379
-    password:
+    password: 123456
     database: 0
 
 
 elasticsearch:
   host: localhost
   port: 9200
-  user-index: lab_users 
+  user-index: lab_users

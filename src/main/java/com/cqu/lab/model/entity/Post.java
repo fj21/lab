@@ -1,23 +1,29 @@
 package com.cqu.lab.model.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
 
 /**
  * 帖子表
- * @TableName post
  */
 @Data
+@TableName("post")
 public class Post implements Serializable {
     /**
      * 帖子ID
      */
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
      * 作者ID
      */
+    @TableField("user_id")
     private Long userId;
 
     /**
@@ -33,6 +39,7 @@ public class Post implements Serializable {
     /**
      * 内容类型 0-图片  1-视频
      */
+    @TableField("media_type")
     private Integer mediaType;
 
     /**
@@ -43,36 +50,43 @@ public class Post implements Serializable {
     /**
      * 点赞数
      */
+    @TableField("like_count")
     private Integer likeCount;
 
     /**
      * 收藏数
      */
+    @TableField("collect_count")
     private Integer collectCount;
 
     /**
      * 评论数
      */
+    @TableField("comment_count")
     private Integer commentCount;
 
     /**
      * 浏览数
      */
+    @TableField("view_count")
     private Integer viewCount;
 
     /**
      * 是否删除
      */
+    @TableField("is_deleted")
     private Integer isDeleted;
 
     /**
-     * 
+     * 创建时间
      */
+    @TableField("created_at")
     private Date createdAt;
 
     /**
-     * 
+     * 更新时间
      */
+    @TableField("updated_at")
     private Date updatedAt;
 
     private static final long serialVersionUID = 1L;

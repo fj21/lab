@@ -1,5 +1,6 @@
 package com.cqu.lab.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -9,13 +10,12 @@ import java.util.concurrent.TimeUnit;
  * Redis工具类
  */
 @Component
+@RequiredArgsConstructor
 public class RedisUtil {
+
     
     private final RedisTemplate<String, Object> redisTemplate;
-    
-    public RedisUtil(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
+
     
     /**
      * 缓存基本的对象

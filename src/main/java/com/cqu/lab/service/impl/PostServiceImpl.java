@@ -54,7 +54,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Override
     public PostListVO getSectionPosts(Integer category,Integer lastPostId) {
         //1.根据category和lastPostId取50条数据
-        if(lastPostId.equals(0)) lastPostId = postMapper.selectNewesPost();
+        if(lastPostId.equals(0)) lastPostId = postMapper.selectNewestPost();
         List<Post> posts = postMapper.selectSectionPost(category, lastPostId);
 
         if (posts == null || posts.isEmpty()) {
@@ -325,7 +325,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Override
     public PostListVO getPersonPosts(Integer authorId, Integer lastPostId) {
         //1.根据category和lastPostId取50条数据
-        if(lastPostId.equals(0)) lastPostId = postMapper.selectNewesPost();
+        if(lastPostId.equals(0)) lastPostId = postMapper.selectNewestPost();
         if(authorId == null) authorId = ThreadLocalUtil.getUserId();
 
         // 查询用户发布的帖子

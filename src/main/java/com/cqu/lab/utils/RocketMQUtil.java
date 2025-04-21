@@ -1,5 +1,7 @@
 package com.cqu.lab.utils;
 
+import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
@@ -9,8 +11,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class RocketMQUtil {
-    
-    private final RocketMQTemplate rocketMQTemplate;
+
+    private RocketMQTemplate rocketMQTemplate;
     
     public RocketMQUtil(RocketMQTemplate rocketMQTemplate) {
         this.rocketMQTemplate = rocketMQTemplate;

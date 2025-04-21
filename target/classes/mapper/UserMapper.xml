@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.cqu.lab.mapper.UserMapper">
 
-    <resultMap id="BaseResultMap" type="com.cqu.lab.dao.domain.User">
+    <resultMap id="BaseResultMap" type="com.cqu.lab.model.entity.User">
             <id property="id" column="id" jdbcType="INTEGER"/>
             <result property="phone" column="phone" jdbcType="CHAR"/>
             <result property="username" column="username" jdbcType="VARCHAR"/>

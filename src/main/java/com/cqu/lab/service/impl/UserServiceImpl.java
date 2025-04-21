@@ -15,6 +15,7 @@ import com.cqu.lab.service.UserService;
 import com.cqu.lab.utils.RedisUtil;
 import com.cqu.lab.utils.RocketMQUtil;
 import jakarta.annotation.Resource;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,12 +33,6 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private UserMapper userMapper;
-
-    @Resource
-    private UserRepository userRepository;
-
-    @Resource
-    private PasswordEncoder passwordEncoder;
 
     @Resource
     private RedisUtil redisUtil;
@@ -84,7 +79,7 @@ public class UserServiceImpl implements UserService {
             // 生成随机盐并加密密码
             String salt = RandomUtil.randomString(6);
             user.setSalt(salt);
-            user.setPassword(passwordEncoder.encode(registerDTO.getPassword() + salt));
+            user.setPassword(DigestUtils.md5Hex(registerDTO.getPassword()+salt));
 
             // 设置初始值
             user.setImage("https://placeholder.com/user_default.png"); // 默认头像
@@ -98,9 +93,8 @@ public class UserServiceImpl implements UserService {
             // 保存用户到数据库
             userMapper.insert(user);
 
-            // 保存用户到ES索引
-            userRepository.save(user);
-
+            // 发送mq消息
+            rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC,user);
             return user.getId();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -130,7 +124,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 验证密码
-        if (!passwordEncoder.matches(loginDTO.getPassword() + user.getSalt(), user.getPassword())) {
+        if (!user.getPassword().equals(DigestUtils.md5Hex(loginDTO.getPassword()+user.getSalt()))) {
             throw new RuntimeException("密码错误");
         }
         //生成token
@@ -138,7 +132,7 @@ public class UserServiceImpl implements UserService {
         //将token和对应的用户信息存入redis，过期时间2小时
         stringRedisTemplate.opsForValue().set(Constants.REDIS_TOEKN_KEY+token,
                 user.getId().toString(),Constants.TOKEN_EXPIRE_TIME, TimeUnit.SECONDS);
-        // 生成JWT令牌
+        // 生成令牌
         return token;
     }
 

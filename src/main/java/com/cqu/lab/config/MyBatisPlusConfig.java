@@ -1,10 +1,12 @@
 package com.cqu.lab.config;
 
+import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import org.apache.ibatis.reflection.MetaObject;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,8 +16,9 @@ import java.time.LocalDateTime;
  * MyBatis-Plus配置类
  */
 @Configuration
+@MapperScan("com.cqu.lab.mapper")
 public class MyBatisPlusConfig {
-    
+
     /**
      * MyBatis-Plus插件配置
      */
@@ -23,12 +26,12 @@ public class MyBatisPlusConfig {
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         // 分页插件
-        interceptor.addInnerInterceptor(new PaginationInnerInterceptor());
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         // 乐观锁插件
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         return interceptor;
     }
-    
+
     /**
      * 自动填充处理器
      */
@@ -42,7 +45,7 @@ public class MyBatisPlusConfig {
                 // 更新时间自动填充
                 this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
             }
-            
+
             @Override
             public void updateFill(MetaObject metaObject) {
                 // 更新时间自动填充
@@ -50,4 +53,4 @@ public class MyBatisPlusConfig {
             }
         };
     }
-} 
+}
