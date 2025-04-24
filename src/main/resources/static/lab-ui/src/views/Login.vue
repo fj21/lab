@@ -90,10 +90,10 @@ const handleLogin = async () => {
     loginError.value = '';
     
     // 调用登录API
-    const response = await login(loginForm);
+    //const response = await login(loginForm);
     
     // 保存token
-    localStorage.setItem('token', response.data);
+    //localStorage.setItem('token', response.data);
     
     ElMessage.success('登录成功');
     

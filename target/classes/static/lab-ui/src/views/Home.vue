@@ -1,25 +1,5 @@
 <template>
   <div class="home-container">
-    <div class="header">
-      <div class="logo">
-        <span>实验室门户</span>
-      </div>
-      <div class="user-info" v-if="userInfo">
-        <el-dropdown trigger="click">
-          <div class="avatar-container">
-            <el-avatar :src="userInfo.image" />
-            <span class="username">{{ userInfo.username }}</span>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="showUserProfile">个人资料</el-dropdown-item>
-              <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </div>
-
     <div class="content">
       <div class="hero-section">
         <h1>欢迎来到实验室门户系统</h1>
@@ -100,11 +80,41 @@ const latestPosts = ref([]);
 // 页面加载时获取用户信息
 onMounted(async () => {
   try {
-    const res = await getUserInfo();
-    userInfo.value = res.data;
-
-    // 获取最新帖子
-    fetchLatestPosts();
+    // 模拟数据
+    latestPosts.value = [
+      {
+        id: 1,
+        content: '人工智能研究团队最新研究成果：基于深度学习的图像识别系统取得突破性进展',
+        coverUrl: 'https://picsum.photos/id/1/600/400',
+        userBasicVO: {
+          username: '张教授',
+          image: 'https://randomuser.me/api/portraits/men/1.jpg'
+        }
+      },
+      {
+        id: 2,
+        content: '实验室新设备展示：最新的高性能计算集群已投入使用，将大幅提升我们的研究能力',
+        coverUrl: 'https://picsum.photos/id/2/600/400',
+        userBasicVO: {
+          username: '李研究员',
+          image: 'https://randomuser.me/api/portraits/women/2.jpg'
+        }
+      },
+      {
+        id: 3,
+        content: '学术讲座预告：下周将举办"人工智能与未来社会"主题讲座，欢迎各位师生参加',
+        coverUrl: 'https://picsum.photos/id/3/600/400',
+        userBasicVO: {
+          username: '王助理',
+          image: 'https://randomuser.me/api/portraits/men/3.jpg'
+        }
+      }
+    ];
+    
+    // 在实际项目中，应该调用API获取数据
+    // const res = await getUserInfo();
+    // userInfo.value = res.data;
+    // fetchLatestPosts();
   } catch (error) {
     console.error('获取用户信息失败:', error);
   }
@@ -168,40 +178,9 @@ const viewPostDetail = (postId) => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
-}
-
-.header {
-  height: 60px;
-  background-color: white;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-  color: #FF2442;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-}
-
-.avatar-container {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.username {
-  margin-left: 10px;
-  font-size: 14px;
+  background-color: #0d1117;
+  color: #e6edf3;
+  padding-top: 80px; /* Space for fixed navigation */
 }
 
 .content {
@@ -209,8 +188,8 @@ const viewPostDetail = (postId) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: #0d1117;
+  color: #e6edf3;
 }
 
 /* Hero Section */
@@ -218,20 +197,20 @@ const viewPostDetail = (postId) => {
   width: 100%;
   padding: 60px 20px;
   text-align: center;
-  background-color: white;
+  background-color: #161b22;
   margin-bottom: 30px;
 }
 
 .hero-section h1 {
   font-size: 36px;
   margin-bottom: 20px;
-  color: #333;
+  color: #e6edf3;
 }
 
 .hero-section p {
   font-size: 18px;
   margin-bottom: 30px;
-  color: #666;
+  color: #8b949e;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
@@ -255,7 +234,7 @@ const viewPostDetail = (postId) => {
   text-align: center;
   font-size: 28px;
   margin-bottom: 40px;
-  color: #333;
+  color: #e6edf3;
 }
 
 .features-grid {
@@ -265,35 +244,35 @@ const viewPostDetail = (postId) => {
 }
 
 .feature-card {
-  background-color: white;
+  background-color: #161b22;
   border-radius: 8px;
   padding: 30px;
   text-align: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s, box-shadow 0.3s;
   cursor: pointer;
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .feature-card i {
   font-size: 40px;
-  color: #FF2442;
+  color: #8957e5;
   margin-bottom: 20px;
 }
 
 .feature-card h3 {
   font-size: 20px;
   margin-bottom: 15px;
-  color: #333;
+  color: #e6edf3;
 }
 
 .feature-card p {
   font-size: 14px;
-  color: #666;
+  color: #8b949e;
   line-height: 1.5;
 }
 
@@ -309,7 +288,7 @@ const viewPostDetail = (postId) => {
   text-align: center;
   font-size: 28px;
   margin-bottom: 40px;
-  color: #333;
+  color: #e6edf3;
 }
 
 .posts-preview {
@@ -319,16 +298,17 @@ const viewPostDetail = (postId) => {
 }
 
 .post-card {
-  background-color: white;
+  background-color: #161b22;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  transition: transform 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .post-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .post-image img {
@@ -349,7 +329,7 @@ const viewPostDetail = (postId) => {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #333;
+  color: #e6edf3;
 }
 
 .post-info {
@@ -371,8 +351,13 @@ const viewPostDetail = (postId) => {
   object-fit: cover;
 }
 
+.username {
+  font-size: 14px;
+  color: #8b949e;
+}
+
 .view-more-card {
-  background-color: #f9f9f9;
+  background-color: #21262d;
   border-radius: 8px;
   height: 100%;
   display: flex;
@@ -381,11 +366,11 @@ const viewPostDetail = (postId) => {
   cursor: pointer;
   transition: background-color 0.3s;
   min-height: 300px;
-  border: 2px dashed #ddd;
+  border: 2px dashed #30363d;
 }
 
 .view-more-card:hover {
-  background-color: #f0f0f0;
+  background-color: #2d333b;
 }
 
 .view-more-content {
@@ -393,7 +378,7 @@ const viewPostDetail = (postId) => {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: #666;
+  color: #8b949e;
 }
 
 .view-more-content i {
@@ -402,5 +387,29 @@ const viewPostDetail = (postId) => {
 
 .view-more-content span {
   font-size: 16px;
+}
+
+/* Element Plus overrides */
+:deep(.el-button) {
+  background-color: #8957e5;
+  border-color: #8957e5;
+  color: #fff;
+}
+
+:deep(.el-button:hover) {
+  background-color: #9e6ff0;
+  border-color: #9e6ff0;
+}
+
+:deep(.el-button--default) {
+  background-color: #21262d;
+  border-color: #30363d;
+  color: #e6edf3;
+}
+
+:deep(.el-button--default:hover) {
+  background-color: #30363d;
+  border-color: #8b949e;
+  color: #e6edf3;
 }
 </style>

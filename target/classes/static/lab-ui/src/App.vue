@@ -3,34 +3,27 @@
     <!-- Don't show navigation on login and register pages -->
     <Navigation v-if="!isAuthPage" />
     <div class="main-content">
-      <router-view />
+      <!-- Add key to router-view to force component re-creation when route changes -->
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" :key="route.fullPath" />
+        </keep-alive>
+      </router-view>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import Navigation from './components/Navigation.vue';
 
-export default {
-  name: 'App',
-  components: {
-    Navigation
-  },
-  setup() {
-    const route = useRoute();
+const route = useRoute();
 
-    // Check if current page is login or register
-    const isAuthPage = computed(() => {
-      return route.path === '/login' || route.path === '/register';
-    });
-
-    return {
-      isAuthPage
-    };
-  }
-};
+// Check if current page is login or register
+const isAuthPage = computed(() => {
+  return route.path === '/login' || route.path === '/register';
+});
 </script>
 
 <style>
@@ -46,17 +39,24 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   height: 100%;
   width: 100%;
-  background-color: #f5f5f5;
+  background-color: #0d1117;
+  overflow-y: auto;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 #app {
   min-height: 100vh;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-content {
-  padding-top: 20px;
+  flex: 1;
+  width: 100%;
+  padding-top: 60px; /* Height of the navigation bar */
   min-height: calc(100vh - 60px);
+  position: relative;
 }
 
 /* For auth pages */
