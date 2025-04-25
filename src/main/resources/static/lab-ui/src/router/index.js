@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import AdminDashboard from '../views/AdminDashboard.vue'
 
 // 路由配置
 const routes = [
@@ -78,6 +79,21 @@ const routes = [
     component: () => import('../views/PostCreate.vue'),
     meta: { requiresAuth: true } // 需要登录才能访问
   },
+  {
+    path: '/posts/detail/:id',
+    name: 'PostsDetail',
+    component: () => import('../views/PostsDetail.vue'),
+    meta: { requiresAuth: false } // 允许未登录用户访问
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: {
+      requiresAuth: false,
+      requiresAdmin: false
+    }
+  }
 ];
 
 // 创建路由实例
@@ -96,22 +112,26 @@ const router = createRouter({
 });
 
 // 全局前置守卫
-router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('token');
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = localStorage.getItem('token')
+  const isAdmin = localStorage.getItem('userRole') === 'admin'
 
-  // 需要认证但未登录，跳转到登录页
-  if (to.matched.some(record => record.meta.requiresAuth) && !token) {
-    next({ name: 'Login' });
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    if (!isAuthenticated || !isAdmin) {
+      next('/login')
+    } else {
+      next()
+    }
+  } else if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      next('/login')
+    } else {
+      next()
+    }
+  } else {
+    next()
   }
-  // 已登录用户访问游客页面，跳转到首页
-  else if (to.matched.some(record => record.meta.guest) && token) {
-    next({ name: 'Home' });
-  }
-  // 其他情况正常通过
-  else {
-    next();
-  }
-});
+})
 
 // Add global error handler for navigation failures
 router.onError((error) => {
@@ -120,3 +140,4 @@ router.onError((error) => {
 });
 
 export default router;
+

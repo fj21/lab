@@ -13,19 +13,19 @@
         </div>
       </div>
 
-      <div class="nav-links">
-        <div
-          v-for="item in navItems"
-          :key="item.path"
-          class="nav-item"
-          :class="{ 'active': isActive(item.path) }"
-          @click="navigateTo(item.path)"
-        >
-          {{ currentLang === 'zh' ? item.label : item.enLabel }}
-        </div>
-      </div>
-
       <div class="right-section">
+        <div class="nav-links">
+          <div
+            v-for="item in navItems"
+            :key="item.path"
+            class="nav-item"
+            :class="{ 'active': isActive(item.path) }"
+            @click="navigateTo(item.path)"
+          >
+            {{ currentLang === 'zh' ? item.label : item.enLabel }}
+          </div>
+        </div>
+
         <div class="language-selector">
           <span :class="{ 'active': currentLang === 'en' }" @click="changeLang('en')">EN</span>
           <span class="lang-divider">|</span>
@@ -113,7 +113,6 @@ const navItems = [
   { label: '实验室概况', path: '/labIntro', enLabel: 'About' },
   { label: '团队成员', path: '/teams', enLabel: 'Team' },
   { label: '新闻动态', path: '/news', enLabel: 'News' },
-  { label: '人才去向', path: '/education', enLabel: 'Education' },
   { label: '科学研究', path: '/science', enLabel: 'Research' },
   { label: '在线交流', path: '/posts', enLabel: 'Forum' }
 ];
@@ -279,9 +278,16 @@ onMounted(async () => {
   margin: 0 15px;
 }
 
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
 .nav-links {
   display: flex;
   gap: 20px;
+  margin-right: 10px;
 }
 
 .nav-item {
@@ -305,12 +311,6 @@ onMounted(async () => {
   width: 100%;
   height: 2px;
   background-color: #8957e5;
-}
-
-.right-section {
-  display: flex;
-  align-items: center;
-  gap: 15px;
 }
 
 .language-selector {
@@ -485,7 +485,7 @@ onMounted(async () => {
 }
 
 @media (max-width: 992px) {
-  .nav-links {
+  .right-section .nav-links {
     display: none;
   }
 
