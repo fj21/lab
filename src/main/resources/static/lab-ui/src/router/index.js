@@ -86,6 +86,12 @@ const routes = [
     meta: { requiresAuth: false } // 允许未登录用户访问
   },
   {
+    path: '/resources',
+    name: 'Resources',
+    component: () => import('../views/Resources.vue'),
+    meta: { requiresAuth: false } // 允许未登录用户访问
+  },
+  {
     path: '/admin',
     name: 'AdminDashboard',
     component: AdminDashboard,

@@ -2,27 +2,33 @@ package com.cqu.lab.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cqu.lab.constant.Constants;
 import com.cqu.lab.mapper.UserMapper;
+import com.cqu.lab.model.dto.UserCreateDTO;
 import com.cqu.lab.model.dto.UserLoginDTO;
 import com.cqu.lab.model.dto.UserRegisterDTO;
 import com.cqu.lab.model.dto.UserUpdateDTO;
 import com.cqu.lab.model.entity.User;
 import com.cqu.lab.model.vo.UserBasicVO;
+import com.cqu.lab.model.vo.UserListVO;
 import com.cqu.lab.model.vo.UserVO;
 import com.cqu.lab.repository.UserRepository;
 import com.cqu.lab.service.UserService;
 import com.cqu.lab.utils.RedisUtil;
 import com.cqu.lab.utils.RocketMQUtil;
-import jakarta.annotation.Resource;
+import com.cqu.lab.utils.ThreadLocalUtil;
+import javax.annotation.Resource;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -258,8 +264,196 @@ public class UserServiceImpl implements UserService {
     public User getByPhone(String phone) {
         return userMapper.findByPhone(phone);
     }
+
+    /**
+     * 获取用户列表（分页）
+     */
+    @Override
+    public UserListVO getUserList(Integer pageNum, Integer pageSize) {
+        // 创建分页对象
+        Page<User> page = new Page<>(pageNum, pageSize);
+
+        // 查询用户列表
+        Page<User> userPage = userMapper.selectPage(page, new LambdaQueryWrapper<User>()
+                .orderByDesc(User::getId));
+
+        // 构建返回结果
+        UserListVO userListVO = new UserListVO();
+        userListVO.setTotal((int) userPage.getTotal());
+        userListVO.setPageNum(pageNum);
+        userListVO.setPageSize(pageSize);
+
+        // 转换为VO列表
+        List<UserVO> userVOList = new ArrayList<>();
+        for (User user : userPage.getRecords()) {
+            UserVO userVO = new UserVO();
+            BeanUtil.copyProperties(user, userVO);
+            userVOList.add(userVO);
+        }
+
+        userListVO.setUserList(userVOList);
+        return userListVO;
+    }
+
+    /**
+     * 创建用户（管理员操作）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer createUser(UserCreateDTO userCreateDTO) {
+        // 检查手机号是否已被注册
+        User existUser = getByPhone(userCreateDTO.getPhone());
+        if (existUser != null) {
+            throw new RuntimeException("该手机号已被注册");
+        }
+
+        // 创建新用户
+        User user = new User();
+        user.setPhone(userCreateDTO.getPhone());
+        user.setUsername(userCreateDTO.getUsername());
+
+        // 生成随机盐并加密密码
+        String salt = RandomUtil.randomString(6);
+        user.setSalt(salt);
+        user.setPassword(DigestUtils.md5Hex(userCreateDTO.getPassword() + salt));
+
+        // 设置其他字段
+        user.setImage(userCreateDTO.getImage() != null ? userCreateDTO.getImage() : "https://placeholder.com/user_default.png");
+        user.setSignature(userCreateDTO.getSignature() != null ? userCreateDTO.getSignature() : "这个人很懒，什么都没留下");
+        user.setStatus(Constants.USER_STATUS_NORMAL);
+        user.setAttention(0);
+        user.setFollowers(0);
+        user.setWorks(0);
+        user.setLikes(0);
+
+        // 保存用户到数据库
+        userMapper.insert(user);
+
+        // 发送MQ消息
+        rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC, user);
+
+        return user.getId();
+    }
+
+    /**
+     * 更新用户信息（管理员操作）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateUserAdmin(Integer userId, UserUpdateDTO userUpdateDTO) {
+        // 查询用户是否存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // 更新用户信息
+        User updateUser = new User();
+        updateUser.setId(userId);
+
+        // 只更新有值的字段
+        if (userUpdateDTO.getPhone() != null) {
+            // 检查手机号是否已被其他用户使用
+            User existUser = getByPhone(userUpdateDTO.getPhone());
+            if (existUser != null && !existUser.getId().equals(userId)) {
+                throw new RuntimeException("该手机号已被其他用户使用");
+            }
+            updateUser.setPhone(userUpdateDTO.getPhone());
+        }
+
+        if (userUpdateDTO.getUsername() != null) {
+            updateUser.setUsername(userUpdateDTO.getUsername());
+        }
+
+        if (userUpdateDTO.getPassword() != null) {
+            // 更新密码需要重新生成盐
+            String salt = RandomUtil.randomString(6);
+            updateUser.setSalt(salt);
+            updateUser.setPassword(DigestUtils.md5Hex(userUpdateDTO.getPassword() + salt));
+        }
+
+        if (userUpdateDTO.getRole() != null) {
+            // 设置用户角色
+            // 这里假设角色信息存储在用户表中的某个字段，实际项目中可能需要调整
+            // updateUser.setRole(userUpdateDTO.getRole());
+        }
+
+        if (userUpdateDTO.getImage() != null) {
+            updateUser.setImage(userUpdateDTO.getImage());
+        }
+
+        if (userUpdateDTO.getSignature() != null) {
+            updateUser.setSignature(userUpdateDTO.getSignature());
+        }
+
+        if (userUpdateDTO.getStatus() != null) {
+            updateUser.setStatus(userUpdateDTO.getStatus());
+        }
+
+        // 更新数据库
+        int rows = userMapper.updateById(updateUser);
+
+        if (rows > 0) {
+            // 清除Redis缓存
+            redisUtil.deleteObject(Constants.REDIS_USER_KEY_PREFIX + userId);
+            redisUtil.deleteObject(Constants.REDIS_USER_BASIC_INFO_KEY_PREFIX + userId);
+
+            // 查询更新后的完整用户数据
+            User updatedUser = userMapper.selectById(userId);
+
+            // 异步更新ES索引
+            rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC, updatedUser);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 更新用户状态（启用/禁用）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateUserStatus(Integer userId, Integer status) {
+        // 查询用户是否存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // 检查状态值是否有效
+        if (status != Constants.USER_STATUS_NORMAL && status != Constants.USER_STATUS_LOCKED) {
+            throw new RuntimeException("无效的状态值");
+        }
+
+        // 更新用户状态
+        User updateUser = new User();
+        updateUser.setId(userId);
+        updateUser.setStatus(status);
+
+        // 更新数据库
+        int rows = userMapper.updateById(updateUser);
+
+        if (rows > 0) {
+            // 清除Redis缓存
+            redisUtil.deleteObject(Constants.REDIS_USER_KEY_PREFIX + userId);
+            redisUtil.deleteObject(Constants.REDIS_USER_BASIC_INFO_KEY_PREFIX + userId);
+
+            // 如果是禁用用户，需要清除用户的登录状态
+            if (status == Constants.USER_STATUS_LOCKED) {
+                // 这里应该清除用户的登录令牌
+                // 实际项目中可能需要查询用户的所有令牌并清除
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public long count() {
+        return userMapper.selectCount(new LambdaQueryWrapper<User>());
+    }
 }
-
-
-
-

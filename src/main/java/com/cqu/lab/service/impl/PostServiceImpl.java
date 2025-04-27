@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cqu.lab.mapper.PostCollectMapper;
 import com.cqu.lab.mapper.PostLikeMapper;
 import com.cqu.lab.mapper.PostMediaMapper;
+import com.cqu.lab.model.dto.ContentUpdateDTO;
 import com.cqu.lab.model.entity.Post;
 import com.cqu.lab.model.entity.PostCollect;
 import com.cqu.lab.model.entity.PostLike;
@@ -12,21 +13,22 @@ import com.cqu.lab.model.entity.PostMedia;
 import com.cqu.lab.model.vo.PostDetailVO;
 import com.cqu.lab.model.vo.PostListVO;
 import com.cqu.lab.model.vo.UserBasicVO;
+import com.cqu.lab.service.OssService;
 import com.cqu.lab.service.PostService;
 import com.cqu.lab.mapper.PostMapper;
 import com.cqu.lab.service.UserService;
 import com.cqu.lab.utils.ThreadLocalUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.cqu.lab.mapper.CommentMapper;
 import com.cqu.lab.model.entity.Comment;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     implements PostService{
 
@@ -45,6 +48,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     private final PostMediaMapper postMediaMapper;
     private final CommentMapper commentMapper;
     private final UserService userService;
+    private final OssService ossService;
     /**
      * 返回帖子列表
      * @param category
@@ -231,7 +235,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         // 处理文件上传
         try {
-            // 模拟文件上传逻辑，实际应该使用云存储服务
+            log.info("Processing {} files for post ID: {}", files.length, post.getId());
+
             for (int i = 0; i < files.length; i++) {
                 MultipartFile file = files[i];
 
@@ -239,27 +244,57 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
                 PostMedia postMedia = new PostMedia();
                 postMedia.setPostId(post.getId());
                 postMedia.setMediaType(type);
+                postMedia.setSortOrder(i);
 
-                // 模拟文件上传到云存储，获取URL
-                String mediaUrl = "https://example.com/media/" + System.currentTimeMillis() + "_" + i + "_" + file.getOriginalFilename();
-                postMedia.setMediaUrl(mediaUrl);
+                // 根据类型上传到不同目录
+                String mediaUrl;
+                String coverUrl = null;
 
-                // 如果是视频类型，设置封面图
-                if (type == 1) {
-                    String coverUrl = "https://example.com/cover/" + System.currentTimeMillis() + "_" + file.getOriginalFilename() + ".jpg";
-                    postMedia.setCoverUrl(coverUrl);
+                if (type == 0) { // 图片类型
+                    // 上传图片到OSS
+                    mediaUrl = ossService.uploadImage(file);
+                    log.info("Uploaded image: {}", mediaUrl);
+
+                    // 对于图片，第一张作为封面
+                    if (i == 0) {
+                        coverUrl = mediaUrl;
+                    }
+                } else { // 视频类型
+                    // 上传视频到OSS
+                    mediaUrl = ossService.uploadVideo(file);
+                    log.info("Uploaded video: {}", mediaUrl);
+
+                    // 为视频生成封面图（这里简化处理，实际应该提取视频帧或让用户上传封面）
+                    // 这里我们假设用户上传了视频封面作为第二个文件
+                    if (i < files.length - 1 && files[i+1].getContentType().startsWith("image/")) {
+                        coverUrl = ossService.uploadCover(files[i+1]);
+                        i++; // 跳过下一个文件，因为它是封面
+                    } else {
+                        // 如果没有提供封面，可以使用默认封面或生成一个
+                        coverUrl = "https://your-bucket-name.oss-cn-beijing.aliyuncs.com/default/video_cover.jpg";
+                    }
                 }
 
-                postMedia.setSortOrder(i);
+                // 设置媒体URL和封面URL
+                postMedia.setMediaUrl(mediaUrl);
+                //仅把封面保存在sortOrder为0的postmedia中，避免资源浪费
+                if(i == 0) postMedia.setCoverUrl(coverUrl);
 
                 // 保存媒体资源
                 postMediaMapper.insert(postMedia);
+                log.info("Saved media record for post ID: {}, media URL: {}", post.getId(), mediaUrl);
             }
 
             return true;
         } catch (Exception e) {
+            log.error("Failed to process files for post ID: " + post.getId(), e);
+
             // 如果文件处理失败，删除已创建的帖子
             removeById(post.getId());
+
+            // 清理已上传的文件（如果有）
+            // 这里可以添加清理逻辑，但需要记录已上传的文件URL
+
             return false;
         }
     }
@@ -374,6 +409,190 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         postListVO.setPostVOList(postVOList);
         return postListVO;
+    }
+
+    /**
+     * 根据内容类型获取内容
+     * @param type 内容类型（research-研究方向，achievements-科研成果，team-团队介绍）
+     * @return 内容数据
+     */
+    @Override
+    public Map<String, Object> getContentByType(String type) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 根据类型查询对应的内容
+        // 这里假设每种类型的内容都存储在Post表中，使用特定的category值来区分
+        Integer category = getContentCategory(type);
+
+        if (category != null) {
+            // 查询该类型的最新内容
+            QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("category", category)
+                    .eq("is_deleted", 0)
+                    .orderByDesc("created_at")
+                    .last("LIMIT 1");
+
+            Post post = postMapper.selectOne(queryWrapper);
+
+            if (post != null) {
+                // 解析内容
+                String content = post.getContent();
+                String title = "";
+                String body = "";
+
+                // 假设内容的第一行是标题，其余是正文
+                if (content.contains("\n")) {
+                    int firstLineEnd = content.indexOf("\n");
+                    title = content.substring(0, firstLineEnd).trim();
+                    body = content.substring(firstLineEnd + 1).trim();
+                } else {
+                    title = content;
+                }
+
+                result.put("id", post.getId());
+                result.put("title", title);
+                result.put("content", body);
+
+                // 查询相关的媒体资源
+                QueryWrapper<PostMedia> mediaQueryWrapper = new QueryWrapper<>();
+                mediaQueryWrapper.eq("post_id", post.getId())
+                        .orderByAsc("sort_order");
+
+                List<PostMedia> mediaList = postMediaMapper.selectList(mediaQueryWrapper);
+                List<String> imageUrls = mediaList.stream()
+                        .map(PostMedia::getMediaUrl)
+                        .collect(Collectors.toList());
+
+                result.put("imageUrls", imageUrls);
+            } else {
+                // 如果没有找到内容，返回默认值
+                result.put("id", null);
+                result.put("title", "暂无内容");
+                result.put("content", "暂无内容");
+                result.put("imageUrls", new ArrayList<>());
+            }
+        } else {
+            // 无效的类型
+            result.put("error", "无效的内容类型");
+        }
+
+        return result;
+    }
+
+    /**
+     * 更新内容
+     * @param type 内容类型
+     * @param contentUpdateDTO 内容更新DTO
+     * @return 是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateContent(String type, ContentUpdateDTO contentUpdateDTO) {
+        // 获取内容类型对应的分类ID
+        Integer category = getContentCategory(type);
+
+        if (category == null) {
+            throw new RuntimeException("无效的内容类型");
+        }
+
+        // 查询该类型的最新内容
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("category", category)
+                .eq("is_deleted", 0)
+                .orderByDesc("created_at")
+                .last("LIMIT 1");
+
+        Post existingPost = postMapper.selectOne(queryWrapper);
+
+        // 构建完整内容（标题 + 正文）
+        String fullContent = contentUpdateDTO.getTitle() + "\n\n" + contentUpdateDTO.getContent();
+
+        if (existingPost != null) {
+            // 更新现有内容
+            Post updatePost = new Post();
+            updatePost.setId(existingPost.getId());
+            updatePost.setContent(fullContent);
+            updatePost.setUpdatedAt(new Date());
+
+            boolean updated = updateById(updatePost);
+
+            if (updated) {
+                // 处理图片
+                if (contentUpdateDTO.getImageUrls() != null && !contentUpdateDTO.getImageUrls().isEmpty()) {
+                    // 先删除现有的媒体资源
+                    postMediaMapper.delete(new QueryWrapper<PostMedia>().eq("post_id", existingPost.getId()));
+
+                    // 添加新的媒体资源
+                    int sortOrder = 0;
+                    for (String imageUrl : contentUpdateDTO.getImageUrls()) {
+                        PostMedia postMedia = new PostMedia();
+                        postMedia.setPostId(existingPost.getId());
+                        postMedia.setMediaType(0); // 图片类型
+                        postMedia.setMediaUrl(imageUrl);
+                        postMedia.setCoverUrl(sortOrder == 0 ? imageUrl : null); // 第一张图作为封面
+                        postMedia.setSortOrder(sortOrder++);
+
+                        postMediaMapper.insert(postMedia);
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        } else {
+            // 创建新内容
+            Post newPost = new Post();
+            newPost.setUserId(Long.valueOf(ThreadLocalUtil.getUserId()));
+            newPost.setContent(fullContent);
+            newPost.setCategory(category);
+            newPost.setMediaType(0); // 图片类型
+            newPost.setVisibility(0); // 公开
+            newPost.setLikeCount(0);
+            newPost.setCollectCount(0);
+            newPost.setCommentCount(0);
+            newPost.setViewCount(0);
+            newPost.setIsDeleted(0);
+            newPost.setCreatedAt(new Date());
+            newPost.setUpdatedAt(new Date());
+
+            boolean saved = save(newPost);
+
+            if (saved && contentUpdateDTO.getImageUrls() != null && !contentUpdateDTO.getImageUrls().isEmpty()) {
+                // 添加媒体资源
+                int sortOrder = 0;
+                for (String imageUrl : contentUpdateDTO.getImageUrls()) {
+                    PostMedia postMedia = new PostMedia();
+                    postMedia.setPostId(newPost.getId());
+                    postMedia.setMediaType(0); // 图片类型
+                    postMedia.setMediaUrl(imageUrl);
+                    postMedia.setCoverUrl(sortOrder == 0 ? imageUrl : null); // 第一张图作为封面
+                    postMedia.setSortOrder(sortOrder++);
+
+                    postMediaMapper.insert(postMedia);
+                }
+            }
+
+            return saved;
+        }
+    }
+
+    /**
+     * 根据内容类型获取对应的分类ID
+     * @param type 内容类型
+     * @return 分类ID
+     */
+    private Integer getContentCategory(String type) {
+        switch (type) {
+            case "research":
+                return 10; // 研究方向对应的分类ID
+            case "achievements":
+                return 11; // 科研成果对应的分类ID
+            case "team":
+                return 12; // 团队介绍对应的分类ID
+            default:
+                return null;
+        }
     }
 }
 

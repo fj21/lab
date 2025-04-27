@@ -1,6 +1,6 @@
 package com.cqu.lab.utils;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.messaging.support.MessageBuilder;
@@ -10,13 +10,11 @@ import org.springframework.stereotype.Component;
  * RocketMQ工具类
  */
 @Component
+@RequiredArgsConstructor
 public class RocketMQUtil {
 
-    private RocketMQTemplate rocketMQTemplate;
-    
-    public RocketMQUtil(RocketMQTemplate rocketMQTemplate) {
-        this.rocketMQTemplate = rocketMQTemplate;
-    }
+    private final RocketMQTemplate rocketMQTemplate;
+
     
     /**
      * 同步发送消息

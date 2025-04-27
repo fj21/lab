@@ -2,12 +2,14 @@ package com.cqu.lab.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.cqu.lab.model.dto.ContentUpdateDTO;
 import com.cqu.lab.model.entity.Post;
 import com.cqu.lab.model.vo.PostDetailVO;
 import com.cqu.lab.model.vo.PostListVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author Jinhong Jiang
@@ -18,47 +20,64 @@ public interface PostService extends IService<Post> {
 
     /**
      * 返回帖子列表
-     * @param category
-     * @param lastPostId
-     * @return
+     * @param category 分类
+     * @param lastPostId 上一页最后一条帖子ID
+     * @return 帖子列表
      */
     PostListVO getSectionPosts(Integer category, Integer lastPostId);
 
     /**
      * 返回帖子详情
-     * @param postId
-     * @return
+     * @param postId 帖子ID
+     * @return 帖子详情
      */
     PostDetailVO getPostDetail(Integer postId);
 
     /**
      * 发布帖子
-     * @param type
-     * @param category
-     * @param visibility
-     * @param files
-     * @return
+     * @param type 类型
+     * @param category 分类
+     * @param visibility 可见性
+     * @param content 内容
+     * @param files 文件列表
+     * @return 是否成功
      */
-    Boolean post(Integer type, Integer category, Integer visibility,String content, MultipartFile[] files);
+    Boolean post(Integer type, Integer category, Integer visibility, String content, MultipartFile[] files);
 
     /**
      * 点赞帖子
-     * @param postId postId
-     * @return
+     * @param postId 帖子ID
+     * @return 是否成功
      */
     Boolean doLikePost(Integer postId);
 
     /**
      * 收藏帖子
-     * @param postId postId
-     * @return
+     * @param postId 帖子ID
+     * @return 是否成功
      */
     Boolean doCollectPost(Integer postId);
 
     /**
      * 获得对应的作品列表
-     * @param authorId
-     * @return
+     * @param authorId 作者ID
+     * @param lastPostId 上一页最后一条帖子ID
+     * @return 帖子列表
      */
     PostListVO getPersonPosts(Integer authorId, Integer lastPostId);
+
+    /**
+     * 根据内容类型获取内容
+     * @param type 内容类型（research-研究方向，achievements-科研成果，team-团队介绍）
+     * @return 内容数据
+     */
+    Map<String, Object> getContentByType(String type);
+
+    /**
+     * 更新内容
+     * @param type 内容类型
+     * @param contentUpdateDTO 内容更新DTO
+     * @return 是否成功
+     */
+    Boolean updateContent(String type, ContentUpdateDTO contentUpdateDTO);
 }

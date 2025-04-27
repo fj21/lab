@@ -2,9 +2,9 @@ package com.cqu.lab.interceptor;
 
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.cqu.lab.constant.Constants;
-import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;

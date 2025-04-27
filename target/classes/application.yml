@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8089
 
 spring:
   application:
@@ -30,8 +30,15 @@ spring:
     producer:
       group: lab-producer-group
       send-message-timeout: 3000
+    consumer:
+      group: lab-consumer-group
   autoconfigure:
     import: org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
+  # File upload configuration
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.cqu.lab.model.entity
@@ -61,4 +68,17 @@ redisson:
 elasticsearch:
   host: localhost
   port: 9200
+  username:
+  password:
   user-index: lab_users
+  enabled: false
+
+# Aliyun OSS Configuration
+  aliyun:
+    oss:
+      endpoint: https://oss-cn-chengdu.aliyuncs.com
+      accessKeyId: your-access-key-id
+      accessKeySecret: your-access-key-secret
+      bucketName: cqulab
+      urlPrefix: https://cqulab.oss-cn-chengdu.aliyuncs.com/
+

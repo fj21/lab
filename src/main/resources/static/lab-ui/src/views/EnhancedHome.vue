@@ -129,6 +129,8 @@ import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 import ParticleBackground from '../components/ParticleBackground.vue';
 import NewsSwiper from '../components/NewsSwiper.vue';
+import { getPosts } from '../api/post';
+import { ElMessage } from 'element-plus';
 
 const router = useRouter();
 const route = useRoute();
@@ -265,77 +267,78 @@ const handleScroll = () => {
   }
 };
 
-// 模拟数据
-const newsItems = [
-  {
-    date: '2021/09/30',
-    title: '人工智能教育部重点实验室建设项目验收会召开'
-  },
-  {
-    date: '2021/07/14',
-    title: 'AI时代数据开放共享创新论坛顺利举行'
-  },
-  {
-    date: '2021/07/09',
-    title: '思源AI论坛-上海市人工智能重大专项学术研讨会举办'
-  },
-  {
-    date: '2021/06/25',
-    title: '研究院成功研发新一代智能算法，性能提升30%'
-  },
-  {
-    date: '2021/05/18',
-    title: '研究院与多家企业签署战略合作协议，共同推进AI技术落地'
-  }
-];
+// 实际数据
+const newsItems = ref([]);
+const noticeItems = ref([]);
+const academicItems = ref([]);
+const tabsContent = computed(() => [newsItems.value, noticeItems.value, academicItems.value]);
 
-const noticeItems = [
-  {
-    date: '2024/06/15',
-    title: '关于2024年暑期研究院开放日活动安排的通知'
-  },
-  {
-    date: '2024/05/20',
-    title: '2024年度研究院研究生招生面试通知'
-  },
-  {
-    date: '2024/04/10',
-    title: '关于组织参加第十届全国人工智能创新大赛的通知'
-  },
-  {
-    date: '2024/03/05',
-    title: '研究院2024年度科研项目申报指南'
-  },
-  {
-    date: '2024/02/28',
-    title: '关于研究院设备更新与维护的通知'
-  }
-];
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('zh-CN').replace(/\//g, '/');
+};
 
-const academicItems = [
-  {
-    date: '2024/06/10',
-    title: '研究院最新研究成果在国际顶级期刊Nature发表'
-  },
-  {
-    date: '2024/05/15',
-    title: '研究院主任受邀在ICML 2024作特邀报告'
-  },
-  {
-    date: '2024/04/20',
-    title: '研究院研究生在国际AI挑战赛中获得冠军'
-  },
-  {
-    date: '2024/03/12',
-    title: '研究院与斯坦福大学建立联合研究中心'
-  },
-  {
-    date: '2024/02/05',
-    title: '研究院开发的智能系统获得国家科技进步奖'
-  }
-];
+// 加载新闻数据
+const loadNewsData = async () => {
+  try {
+    // 加载新闻动态 (category=0)
+    const newsResponse = await getPosts(0);
+    if (newsResponse.code === 200 && newsResponse.data) {
+      newsItems.value = newsResponse.data.postVOList.map(post => ({
+        id: post.id,
+        date: formatDate(post.createdAt),
+        title: post.content.split('\n')[0] || '无标题', // 使用内容的第一行作为标题
+        content: post.content,
+        coverUrl: post.coverUrl
+      }));
+    }
 
-const tabsContent = [newsItems, noticeItems, academicItems];
+    // 加载通知公告 (category=1)
+    const noticeResponse = await getPosts(1);
+    if (noticeResponse.code === 200 && noticeResponse.data) {
+      noticeItems.value = noticeResponse.data.postVOList.map(post => ({
+        id: post.id,
+        date: formatDate(post.createdAt),
+        title: post.content.split('\n')[0] || '无标题',
+        content: post.content,
+        coverUrl: post.coverUrl
+      }));
+    }
+
+    // 加载学术动态 (category=2)
+    const academicResponse = await getPosts(2);
+    if (academicResponse.code === 200 && academicResponse.data) {
+      academicItems.value = academicResponse.data.postVOList.map(post => ({
+        id: post.id,
+        date: formatDate(post.createdAt),
+        title: post.content.split('\n')[0] || '无标题',
+        content: post.content,
+        coverUrl: post.coverUrl
+      }));
+    }
+  } catch (error) {
+    console.error('Failed to load news data:', error);
+    ElMessage.error('加载新闻数据失败，请稍后重试');
+
+    // 如果加载失败，使用默认数据
+    newsItems.value = [
+      { date: '2021/09/30', title: '人工智能教育部重点实验室建设项目验收会召开' },
+      { date: '2021/07/14', title: 'AI时代数据开放共享创新论坛顺利举行' }
+    ];
+
+    noticeItems.value = [
+      { date: '2024/06/15', title: '关于2024年暑期研究院开放日活动安排的通知' },
+      { date: '2024/05/20', title: '2024年度研究院研究生招生面试通知' }
+    ];
+
+    academicItems.value = [
+      { date: '2024/06/10', title: '研究院最新研究成果在国际顶级期刊Nature发表' },
+      { date: '2024/05/15', title: '研究院主任受邀在ICML 2024作特邀报告' }
+    ];
+  }
+};
 
 // 动画元素
 const animatedElements = [
@@ -367,42 +370,28 @@ const handleViewMore = (tabIndex) => {
 const handleViewNewsDetail = ({ item, type }) => {
   console.log('View news detail:', item, 'type:', type);
 
-  // Find the matching news item in the newsItems array
-  let newsItem;
+  // 使用真实的帖子ID
+  const postId = item.id;
   let newsType = type;
 
-  if (type === 'news') {
-    newsItem = newsItems.find(news => news.title === item.title);
-  } else if (type === 'notice') {
-    newsItem = noticeItems.find(notice => notice.title === item.title);
-  } else if (type === 'academic') {
-    newsItem = academicItems.find(academic => academic.title === item.title);
-  }
-
-  // If item not found, use the item directly
-  if (!newsItem) {
-    console.warn('News item not found in arrays, using provided item:', item);
-    newsItem = item;
-  }
-
-  // Create a unique ID for the news item based on its title
-  const newsId = encodeURIComponent(newsItem.title.substring(0, 20).replace(/\s+/g, '-'));
-
-  // Navigate to the news detail page with the news ID and type
+  // 根据类型设置查询参数
   router.push({
     path: '/news',
     query: {
-      id: newsId,
+      id: postId,
       type: newsType
     }
   });
 };
 
 // 生命周期钩子
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('scroll', handleScroll);
   // 初始滚动到顶部
   window.scrollTo(0, 0);
+
+  // 加载新闻数据
+  await loadNewsData();
 });
 
 onUnmounted(() => {

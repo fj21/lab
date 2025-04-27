@@ -6,7 +6,7 @@
 import { getMockPosts, getMockPostDetail, getMockUserInfo } from './mockData';
 
 // Flag to enable/disable mock API
-const ENABLE_MOCK = true;
+const ENABLE_MOCK = false;
 
 /**
  * Mock API handler
@@ -21,23 +21,23 @@ export function handleMockRequest(url, method, data, params) {
   if (!ENABLE_MOCK) {
     return null;
   }
-  
+
   console.log(`[Mock API] ${method} ${url}`, { data, params });
-  
+
   // Handle different API endpoints
   if (url.startsWith('/api/post/section') && method.toLowerCase() === 'get') {
     return Promise.resolve(getMockPosts(params?.category, params?.lastPostId || 0));
   }
-  
+
   if (url.startsWith('/api/post/detail/') && method.toLowerCase() === 'get') {
     const postId = url.split('/').pop();
     return Promise.resolve(getMockPostDetail(postId));
   }
-  
+
   if (url === '/api/user/info' && method.toLowerCase() === 'get') {
     return Promise.resolve(getMockUserInfo());
   }
-  
+
   // Default: return null to let the real API handle the request
   return null;
 }
@@ -51,13 +51,13 @@ export function shouldMockRequest(url) {
   if (!ENABLE_MOCK) {
     return false;
   }
-  
+
   // List of endpoints to mock
   const mockedEndpoints = [
     '/api/post/section',
     '/api/post/detail/',
     '/api/user/info'
   ];
-  
+
   return mockedEndpoints.some(endpoint => url.startsWith(endpoint));
 }

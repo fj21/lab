@@ -14,21 +14,32 @@
       </div>
     </div>
 
-    <div class="news-grid">
+    <div class="news-grid" v-infinite-scroll="loadMorePosts" :infinite-scroll-disabled="loading || !hasMorePosts" infinite-scroll-distance="10">
       <div
         v-for="(item, index) in filteredNews"
-        :key="index"
+        :key="item.id || index"
         class="news-item"
         @click="viewNewsDetail(item)"
       >
         <div class="news-image">
-          <img :src="getRandomImage(index)" alt="News Image">
+          <img :src="item.coverUrl || getRandomImage(index)" alt="News Image">
         </div>
         <div class="news-content">
           <div class="news-date">{{ item.date }}</div>
           <div class="news-title">{{ item.title }}</div>
           <div class="news-summary" v-if="item.summary">{{ item.summary }}</div>
         </div>
+      </div>
+
+      <!-- Loading and No More Data indicators -->
+      <div v-if="loading" class="loading-indicator">
+        <i class="el-icon-loading"></i> 加载中...
+      </div>
+      <div v-if="!loading && !hasMorePosts && filteredNews.length > 0" class="no-more-data">
+        没有更多数据了
+      </div>
+      <div v-if="!loading && filteredNews.length === 0" class="no-data">
+        暂无数据
       </div>
     </div>
 
@@ -46,12 +57,37 @@
           <div class="news-detail-source">来源: 实验室新闻中心</div>
         </div>
 
-        <div class="news-detail-image">
-          <img :src="getRandomImage(0)" alt="News Detail Image">
+        <!-- 如果有媒体列表，显示第一张图片或视频 -->
+        <div v-if="selectedNews.mediaList && selectedNews.mediaList.length > 0" class="news-detail-media">
+          <template v-for="(media, index) in selectedNews.mediaList" :key="index">
+            <div v-if="index === 0" class="news-detail-image">
+              <img v-if="media.mediaType === 0" :src="media.mediaUrl" alt="News Media">
+              <video v-else-if="media.mediaType === 1" controls :src="media.mediaUrl" :poster="media.coverUrl"></video>
+            </div>
+          </template>
+        </div>
+        <!-- 如果没有媒体列表，显示封面图 -->
+        <div v-else-if="selectedNews.coverUrl" class="news-detail-image">
+          <img :src="selectedNews.coverUrl" alt="News Cover Image">
+        </div>
+        <!-- 如果既没有媒体列表也没有封面图，显示随机图片 -->
+        <div v-else class="news-detail-image">
+          <img :src="getRandomImage(selectedNews.id || 0)" alt="News Detail Image">
         </div>
 
         <div class="news-detail-text">
-          <p>{{ selectedNews.content || generateFakeContent(selectedNews.title) }}</p>
+          <p>{{ selectedNews.content }}</p>
+        </div>
+
+        <!-- 如果有多张图片，显示图片列表 -->
+        <div v-if="selectedNews.mediaList && selectedNews.mediaList.length > 1" class="news-detail-gallery">
+          <h3>相关图片</h3>
+          <div class="gallery-grid">
+            <div v-for="(media, index) in selectedNews.mediaList.slice(1)" :key="index" class="gallery-item">
+              <img v-if="media.mediaType === 0" :src="media.mediaUrl" alt="Gallery Image">
+              <video v-else-if="media.mediaType === 1" controls :src="media.mediaUrl" :poster="media.coverUrl"></video>
+            </div>
+          </div>
         </div>
 
         <div class="news-detail-footer">
@@ -77,17 +113,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElLoading, ElMessage } from 'element-plus';
+import { getPosts, getPostDetail } from '../api/post';
 
 const route = useRoute();
+const router = useRouter();
 const activeTab = ref(0);
 const tabs = ['全部', '新闻动态', '通知公告', '学术动态'];
 const showNewsDetail = ref(false);
 const selectedNews = ref(null);
+const newsItems = ref([]);
+const loading = ref(false);
+const lastPostId = ref(0);
+const hasMorePosts = ref(true);
 
 // 根据URL参数设置初始标签页和显示详情
-onMounted(() => {
+onMounted(async () => {
   const type = route.query.type;
   const newsId = route.query.id;
 
@@ -99,160 +142,190 @@ onMounted(() => {
     activeTab.value = 1; // 新闻动态
   }
 
+  // 加载新闻列表
+  await loadPosts();
+
   // 如果有newsId参数，显示对应的新闻详情
   if (newsId) {
-    // 查找匹配的新闻项
-    const decodedNewsId = decodeURIComponent(newsId);
-    const matchedNews = newsItems.find(item => {
-      const itemId = item.title.substring(0, 20).replace(/\s+/g, '-');
-      return decodedNewsId.includes(itemId);
-    });
-
-    if (matchedNews) {
-      selectedNews.value = matchedNews;
-      showNewsDetail.value = true;
-    } else {
-      // If not found, create a temporary news item based on the ID
-      console.warn('News item not found for ID:', decodedNewsId);
-
-      // Try to extract a title from the ID
-      const title = decodedNewsId.replace(/-/g, ' ');
-
-      selectedNews.value = {
-        title: title,
-        date: new Date().toLocaleDateString('zh-CN'),
-        type: type || 'news',
-        summary: '详细信息正在加载中...'
-      };
-
-      showNewsDetail.value = true;
+    try {
+      const postId = parseInt(newsId);
+      if (!isNaN(postId)) {
+        await loadPostDetail(postId);
+      }
+    } catch (error) {
+      console.error('Failed to load post detail:', error);
+      ElMessage.error('加载新闻详情失败');
     }
   }
 });
 
-// 模拟新闻数据
-const newsItems = [
-  {
-    date: '2021/09/30',
-    title: '人工智能教育部重点实验室建设项目验收会召开',
-    type: 'news',
-    summary: '本次验收会汇集了来自全国各地的专家学者，对实验室建设项目进行了全面评估。'
-  },
-  {
-    date: '2021/07/14',
-    title: 'AI时代数据开放共享创新论坛顺利举行',
-    type: 'news',
-    summary: '论坛邀请了多位业界专家，深入探讨了AI技术如何推动各行业数字化转型。'
-  },
-  {
-    date: '2021/07/09',
-    title: '思源AI论坛-上海市人工智能重大专项学术研讨会举办',
-    type: 'academic',
-    summary: '来自上海多所高校的学生齐聚一堂，分享各自在人工智能领域的研究成果和心得体会。'
-  },
-  {
-    date: '2024/04/25',
-    title: '研究院成功研发新一代智能算法，性能提升30%',
-    type: 'news',
-    summary: '这一算法在图像识别、自然语言处理等多个领域都表现出色，将推动AI技术的进一步发展。'
-  },
-  {
-    date: '2024/04/18',
-    title: '研究院与多家企业签署战略合作协议，共同推进AI技术落地',
-    type: 'news',
-    summary: '此次合作将促进产学研深度融合，加速AI技术在实际场景中的应用。'
-  },
-  {
-    date: '2024/06/15',
-    title: '关于2024年暑期研究院开放日活动安排的通知',
-    type: 'notice',
-    summary: '开放日将于7月15日至7月20日举行，欢迎各界人士前来参观交流。'
-  },
-  {
-    date: '2024/05/20',
-    title: '2024年度研究院研究生招生面试通知',
-    type: 'notice',
-    summary: '面试将于6月10日至6月15日进行，请考生提前做好准备。'
-  },
-  {
-    date: '2024/04/10',
-    title: '关于组织参加第十届全国人工智能创新大赛的通知',
-    type: 'notice',
-    summary: '鼓励研究院师生积极参与，展示我院在人工智能领域的研究成果。'
-  },
-  {
-    date: '2024/03/05',
-    title: '研究院2024年度科研项目申报指南',
-    type: 'notice',
-    summary: '详细说明了今年科研项目的申报条件、流程和评审标准。'
-  },
-  {
-    date: '2024/02/28',
-    title: '关于研究院设备更新与维护的通知',
-    type: 'notice',
-    summary: '设备维护将于3月10日至3月15日进行，请各实验室做好相关安排。'
-  },
-  {
-    date: '2024/06/10',
-    title: '研究院最新研究成果在国际顶级期刊Nature发表',
-    type: 'academic',
-    summary: '这是研究院在国际顶级期刊上的又一重要成果，彰显了我院的科研实力。'
-  },
-  {
-    date: '2024/05/15',
-    title: '研究院主任受邀在ICML 2024作特邀报告',
-    type: 'academic',
-    summary: 'ICML是机器学习领域的顶级会议，此次受邀作报告是对研究院学术水平的认可。'
-  },
-  {
-    date: '2024/04/20',
-    title: '研究院研究生在国际AI挑战赛中获得冠军',
-    type: 'academic',
-    summary: '这是研究院学生在国际赛事中取得的又一佳绩，展示了我院的人才培养成果。'
-  },
-  {
-    date: '2024/03/12',
-    title: '研究院与斯坦福大学建立联合研究中心',
-    type: 'academic',
-    summary: '此次合作将促进国际学术交流，提升研究院的国际影响力。'
-  },
-  {
-    date: '2024/02/05',
-    title: '研究院开发的智能系统获得国家科技进步奖',
-    type: 'academic',
-    summary: '这是对研究院科研成果的高度认可，将激励我们继续在科研道路上前进。'
+// 监听标签页变化，重新加载数据
+watch(activeTab, async () => {
+  newsItems.value = [];
+  lastPostId.value = 0;
+  hasMorePosts.value = true;
+  await loadPosts();
+});
+
+// 加载帖子列表
+const loadPosts = async () => {
+  if (loading.value || !hasMorePosts.value) return;
+
+  loading.value = true;
+  const loadingInstance = ElLoading.service({
+    target: '.news-grid',
+    text: '加载中...'
+  });
+
+  try {
+    // 根据当前标签页获取对应分类的帖子
+    const category = getCategoryFromTab();
+    const response = await getPosts(category, lastPostId.value);
+
+    if (response.code === 200 && response.data) {
+      const posts = response.data.postVOList || [];
+
+      if (posts.length === 0) {
+        hasMorePosts.value = false;
+      } else {
+        // 转换帖子数据格式
+        const formattedPosts = posts.map(post => ({
+          id: post.id,
+          date: formatDate(post.createdAt),
+          title: post.content.split('\n')[0] || '无标题', // 使用内容的第一行作为标题
+          content: post.content,
+          type: getCategoryType(post.category),
+          summary: getSummary(post.content),
+          coverUrl: post.coverUrl || getRandomImage(post.id),
+          mediaList: post.mediaVOList || []
+        }));
+
+        newsItems.value = [...newsItems.value, ...formattedPosts];
+        lastPostId.value = response.data.lastPostId;
+      }
+    } else {
+      ElMessage.error('获取新闻列表失败');
+    }
+  } catch (error) {
+    console.error('Failed to load posts:', error);
+    ElMessage.error('获取新闻列表失败');
+  } finally {
+    loading.value = false;
+    loadingInstance.close();
   }
-];
+};
+
+// 加载帖子详情
+const loadPostDetail = async (postId) => {
+  try {
+    const response = await getPostDetail(postId);
+
+    if (response.code === 200 && response.data) {
+      const post = response.data;
+
+      selectedNews.value = {
+        id: post.id,
+        date: formatDate(post.createdAt),
+        title: post.content.split('\n')[0] || '无标题',
+        content: post.content,
+        type: getCategoryType(post.category),
+        coverUrl: post.coverUrl || getRandomImage(post.id),
+        mediaList: post.mediaVOList || []
+      };
+
+      showNewsDetail.value = true;
+    } else {
+      ElMessage.error('获取新闻详情失败');
+    }
+  } catch (error) {
+    console.error('Failed to load post detail:', error);
+    ElMessage.error('获取新闻详情失败');
+  }
+};
+
+// 根据标签页获取分类ID
+const getCategoryFromTab = () => {
+  if (activeTab.value === 0) return null; // 全部
+
+  const categoryMap = {
+    1: 0, // 新闻动态
+    2: 1, // 通知公告
+    3: 2  // 学术动态
+  };
+
+  return categoryMap[activeTab.value];
+};
+
+// 根据分类ID获取类型
+const getCategoryType = (category) => {
+  const typeMap = {
+    0: 'news',     // 新闻动态
+    1: 'notice',   // 通知公告
+    2: 'academic'  // 学术动态
+  };
+
+  return typeMap[category] || 'news';
+};
+
+// 从内容中提取摘要
+const getSummary = (content) => {
+  if (!content) return '';
+
+  const lines = content.split('\n').filter(line => line.trim());
+  if (lines.length > 1) {
+    return lines[1]; // 使用第二行作为摘要
+  }
+
+  // 如果没有第二行，则截取第一行的一部分作为摘要
+  return content.length > 50 ? content.substring(0, 50) + '...' : content;
+};
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('zh-CN').replace(/\//g, '-');
+};
 
 // 根据当前标签页筛选新闻
 const filteredNews = computed(() => {
   if (activeTab.value === 0) {
-    return newsItems;
+    return newsItems.value;
   } else {
     const typeMap = {
       1: 'news',
       2: 'notice',
       3: 'academic'
     };
-    return newsItems.filter(item => item.type === typeMap[activeTab.value]);
+    return newsItems.value.filter(item => item.type === typeMap[activeTab.value]);
   }
 });
 
 // 获取随机图片
 const getRandomImage = (index) => {
-  const imageId = (index % 10) + 10; // 使用10-19的图片ID
+  const imageId = (typeof index === 'number' ? index : 0) % 30 + 10;
   return `https://picsum.photos/id/${imageId}/800/400`;
 };
 
 // 查看新闻详情
-const viewNewsDetail = (news) => {
-  selectedNews.value = news;
-  showNewsDetail.value = true;
-};
+const viewNewsDetail = async (news) => {
+  if (news.id) {
+    // 更新URL，但不重新加载页面
+    router.replace({
+      path: route.path,
+      query: { ...route.query, id: news.id }
+    }).catch(err => {
+      if (err.name !== 'NavigationDuplicated') {
+        console.error('Navigation error:', err);
+      }
+    });
 
-// 生成假内容
-const generateFakeContent = (title) => {
-  return `${title}\n\n近日，我院举办了一系列重要活动，旨在促进学术交流和科研创新。活动吸引了众多专家学者和学生参与，现场讨论热烈，思想碰撞频繁。\n\n在活动中，与会者就人工智能的最新发展趋势、技术挑战以及应用前景进行了深入探讨。多位专家分享了他们在各自领域的研究成果和实践经验，为参与者提供了宝贵的学习机会。\n\n此次活动不仅加强了学术界与产业界的联系，也为我院师生提供了与行业领袖面对面交流的平台。通过这样的交流活动，我们希望能够促进知识共享，推动技术创新，为人工智能的发展贡献力量。\n\n未来，我院将继续举办类似活动，搭建更多交流平台，促进学术研究与产业应用的深度融合，共同推动人工智能技术的进步与发展。`;
+    await loadPostDetail(news.id);
+  } else {
+    selectedNews.value = news;
+    showNewsDetail.value = true;
+  }
 };
 </script>
 

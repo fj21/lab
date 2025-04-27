@@ -4,75 +4,70 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
+import java.io.Serializable;
+import java.util.Date;
+
 /**
- * 帖子表
+ * 资源表
+ * @TableName resource
  */
 @Data
-@TableName("post")
-public class Post implements Serializable {
+@TableName("resource")
+public class Resource implements Serializable {
     /**
-     * 帖子ID
+     * 资源ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
-     * 作者ID
+     * 上传者ID
      */
     @TableField("user_id")
     private Long userId;
 
     /**
-     * 文字内容
+     * 资源标题
+     */
+    private String title;
+
+    /**
+     * 资源描述
+     */
+    private String description;
+
+    /**
+     * 资源内容
      */
     private String content;
 
     /**
-     * 分类 0-新闻动态 1-通知公告 2-学术动态 3-师生 4-生活 5-竞赛...
+     * 资源类型 1-书籍 2-实验指南 3-视频教程 4-软件工具
      */
-    private Integer category;
+    private Integer type;
 
     /**
-     * 内容类型 0-图片  1-视频
+     * 封面图URL
      */
-    @TableField("media_type")
-    private Integer mediaType;
+    @TableField("cover_url")
+    private String coverUrl;
 
     /**
-     * 可见性 0 - public  1- private  2- friends-only
+     * 资源文件URL
      */
-    private Integer visibility;
+    @TableField("download_url")
+    private String downloadUrl;
 
     /**
-     * 点赞数
+     * 下载次数
      */
-    @TableField("like_count")
-    private Integer likeCount;
+    @TableField("download_count")
+    private Integer downloadCount;
 
     /**
-     * 收藏数
-     */
-    @TableField("collect_count")
-    private Integer collectCount;
-
-    /**
-     * 评论数
-     */
-    @TableField("comment_count")
-    private Integer commentCount;
-
-    /**
-     * 浏览数
-     */
-    @TableField("view_count")
-    private Integer viewCount;
-
-    /**
-     * 是否删除
+     * 是否删除 0-未删除 1-已删除
      */
     @TableField("is_deleted")
     private Integer isDeleted;

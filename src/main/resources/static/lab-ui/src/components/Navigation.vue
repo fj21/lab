@@ -114,6 +114,7 @@ const navItems = [
   { label: '团队成员', path: '/teams', enLabel: 'Team' },
   { label: '新闻动态', path: '/news', enLabel: 'News' },
   { label: '科学研究', path: '/science', enLabel: 'Research' },
+  { label: '资源中心', path: '/resources', enLabel: 'Resources' },
   { label: '在线交流', path: '/posts', enLabel: 'Forum' }
 ];
 

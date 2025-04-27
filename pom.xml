@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.4</version>
+		<version>2.7.18</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.cqu</groupId>
@@ -43,18 +43,16 @@
 		</dependency>
 
 		<!-- Spring Boot Data Redis 依赖 -->
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
-			<version>3.4.0</version>
 		</dependency>
 
 		<!-- Redisson 依赖 -->
 		<dependency>
 			<groupId>org.redisson</groupId>
 			<artifactId>redisson-spring-boot-starter</artifactId>
-			<version>3.27.2</version>
+			<version>3.17.7</version>
 		</dependency>
 		<!--Jackson 依赖-->
 		<dependency>
@@ -65,7 +63,7 @@
 		<dependency>
 			<groupId>org.apache.rocketmq</groupId>
 			<artifactId>rocketmq-spring-boot-starter</artifactId>
-			<version>2.3.0</version>
+			<version>2.2.3</version>
 		</dependency>
 <!--		&lt;!&ndash; https://mvnrepository.com/artifact/org.apache.rocketmq/rocketmq-client &ndash;&gt;-->
 <!--		<dependency>-->
@@ -113,15 +111,15 @@
 		<!--mybatisplus 依赖-->
 		<dependency>
 			<groupId>com.baomidou</groupId>
-			<artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-			<version>3.5.10.1</version>
+			<artifactId>mybatis-plus-boot-starter</artifactId>
+			<version>3.5.3.1</version>
 		</dependency>
-<!--		mybatisplus分页插件依赖-->
-		<dependency>
-			<groupId>com.baomidou</groupId>
-			<artifactId>mybatis-plus-jsqlparser</artifactId>
-			<version>3.5.9</version>
-		</dependency>
+<!--&lt;!&ndash;		mybatisplus分页插件依赖&ndash;&gt;-->
+<!--		<dependency>-->
+<!--			<groupId>com.baomidou</groupId>-->
+<!--			<artifactId>mybatis-plus-jsqlparser</artifactId>-->
+<!--			<version>3.5.9</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -152,23 +150,15 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-elasticsearch</artifactId>
-			<version>4.4.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
-			<version>5.7.6</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.data</groupId>
-			<artifactId>spring-data-redis</artifactId>
-			<version>3.4.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.redisson</groupId>
 			<artifactId>redisson</artifactId>
-			<version>3.39.0</version>
+			<version>3.17.7</version>
 		</dependency>
 
 		<!-- Spring Retry 依赖 -->
@@ -183,10 +173,41 @@
 			<artifactId>spring-aspects</artifactId>
 		</dependency>
 		<!-- Spring.dao DataAccess 支持	-->
+<!--		<dependency>-->
+<!--			<groupId>org.springframework</groupId>-->
+<!--			<artifactId>spring-tx</artifactId>-->
+<!--			<version>3.1.1.RELEASE</version>-->
+<!--		</dependency>-->
+
+		<!-- Aliyun OSS SDK -->
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-tx</artifactId>
-			<version>3.1.1.RELEASE</version>
+			<groupId>com.aliyun.oss</groupId>
+			<artifactId>aliyun-sdk-oss</artifactId>
+			<version>3.16.1</version>
+		</dependency>
+
+		<!-- Commons IO for file handling -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.11.0</version>
+		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>jakarta.validation</groupId>-->
+<!--			<artifactId>jakarta.validation-api</artifactId>-->
+<!--			<version>3.0.2</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--			<groupId>jakarta.annotation</groupId>-->
+<!--			<artifactId>jakarta.annotation-api</artifactId>-->
+<!--			<version>2.1.1</version>-->
+<!--		</dependency>-->
+		<!-- Servlet API -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.1</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 

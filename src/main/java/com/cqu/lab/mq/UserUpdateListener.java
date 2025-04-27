@@ -3,7 +3,7 @@ package com.cqu.lab.mq;
 import com.cqu.lab.constant.Constants;
 import com.cqu.lab.model.entity.User;
 import com.cqu.lab.repository.UserRepository;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
@@ -21,7 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 @RocketMQMessageListener(
         topic = Constants.USER_UPDATE_TOPIC,
-        consumerGroup = "lab-user-update-consumer-group"
+        consumerGroup = "lab-user-update-consumer-group",
+        nameServer = "${spring.rocketmq.name-server}"
 )
 public class UserUpdateListener implements RocketMQListener<User> {
 
@@ -54,7 +55,7 @@ public class UserUpdateListener implements RocketMQListener<User> {
      *
      * @param user 用户实体
      */
-    @Retryable(value = {DataAccessException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
+    @Retryable(value = {Exception.class}, maxAttempts = 5, backoff = @Backoff(delay = 2000, multiplier = 2))
     public void saveUserToElasticsearch(User user) {
         try {
             // 检查索引是否存在，不存在则创建
@@ -68,6 +69,9 @@ public class UserUpdateListener implements RocketMQListener<User> {
             // 使用ElasticsearchOperations保存文档
             elasticsearchOperations.save(user);
             log.info("用户信息ES索引更新成功，用户ID：{}", user.getId());
+        } catch (org.springframework.data.elasticsearch.UncategorizedElasticsearchException e) {
+            log.error("Elasticsearch连接异常（将重试），用户ID：{}，错误：{}", user.getId(), e.getMessage());
+            throw e; // 重新抛出异常以触发重试
         } catch (DataAccessException e) {
             log.error("用户信息ES索引更新失败（将重试），用户ID：{}，错误：{}", user.getId(), e.getMessage());
             throw e; // 重新抛出异常以触发重试
