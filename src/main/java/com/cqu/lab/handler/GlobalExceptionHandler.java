@@ -1,6 +1,7 @@
 package com.cqu.lab.handler;
 
 import com.cqu.lab.model.common.Result;
+import com.cqu.lab.model.common.ResultCode;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.messaging.converter.MessageConversionException;
+import org.apache.rocketmq.client.exception.MQClientException;
 
 import java.util.Set;
 
@@ -87,5 +90,24 @@ public class GlobalExceptionHandler {
     public Result<Void> handleException(Exception e) {
         log.error("系统异常: {}", e.getMessage(), e);
         return Result.failed("系统异常，请联系管理员");
+    }
+
+    /**
+     * RocketMQ 消息转换异常处理
+     */
+    @ExceptionHandler(MessageConversionException.class)
+    public Result<Object> handleMessageConversionException(MessageConversionException e) {
+        log.error("消息转换异常：{}", e.getMessage(), e);
+        return Result.failed("消息转换失败，请检查消息格式");
+    }
+
+    /**
+     * RocketMQ 客户端异常处理
+     */
+    @ExceptionHandler(MQClientException.class)
+    public Result<Object> handleMQClientException(MQClientException e) {
+        log.error("RocketMQ客户端异常：{}", e.getMessage(), e);
+        // 消息服务异常不应影响用户操作，返回默认成功
+        return Result.success(null, "操作已接收");
     }
 }

@@ -7,7 +7,7 @@ import request from '../utils/request';
  * @returns {Promise} - 返回帖子列表
  */
 export function getPosts(category = null, lastPostId = 0) {
-  return request.get('/api/post/section', {
+  return request.get('/post/section', {
     params: {
       category,
       lastPostId
@@ -21,7 +21,7 @@ export function getPosts(category = null, lastPostId = 0) {
  * @returns {Promise} - 返回帖子详情
  */
 export function getPostDetail(postId) {
-  return request.get('/api/post/postDetail', {
+  return request.get('/post/postDetail', {
     params: {
       postId
     }
@@ -44,14 +44,14 @@ export function createPost(postData) {
   formData.append('category', postData.category);
   formData.append('visibility', postData.visibility);
   formData.append('content', postData.content);
-  
+
   if (postData.files && postData.files.length > 0) {
     postData.files.forEach(file => {
       formData.append('files', file);
     });
   }
-  
-  return request.post('/api/post/post', formData, {
+
+  return request.post('/post/post', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -64,7 +64,7 @@ export function createPost(postData) {
  * @returns {Promise} - 返回点赞结果
  */
 export function likePost(postId) {
-  return request.post('/api/post/doLikePost', null, {
+  return request.post('/post/doLikePost', null, {
     params: {
       postId
     }
@@ -77,7 +77,7 @@ export function likePost(postId) {
  * @returns {Promise} - 返回收藏结果
  */
 export function collectPost(postId) {
-  return request.post('/api/post/doCollectPost', null, {
+  return request.post('/post/doCollectPost', null, {
     params: {
       postId
     }
@@ -91,7 +91,7 @@ export function collectPost(postId) {
  * @returns {Promise} - 返回帖子列表
  */
 export function getUserPosts(authorId = null, lastPostId = 0) {
-  return request.get('/api/post/personPosts', {
+  return request.get('/post/personPosts', {
     params: {
       authorId,
       lastPostId

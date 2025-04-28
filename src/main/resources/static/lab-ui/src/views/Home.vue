@@ -110,7 +110,7 @@ onMounted(async () => {
         }
       }
     ];
-    
+
     // 在实际项目中，应该调用API获取数据
     // const res = await getUserInfo();
     // userInfo.value = res.data;
@@ -123,7 +123,7 @@ onMounted(async () => {
 // 获取最新帖子
 const fetchLatestPosts = async () => {
   try {
-    const response = await request.get('/api/post/section', {
+    const response = await request.get('/post/section', {
       params: {
         pageSize: 3 // 只获取3条数据用于首页展示
       }

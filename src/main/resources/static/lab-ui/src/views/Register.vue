@@ -7,57 +7,57 @@
           <h2 class="auth-title">用户注册</h2>
           <form @submit.prevent="handleRegister" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
             <div class="auth-input">
-              <el-input 
-                v-model="registerForm.phone" 
-                placeholder=" " 
+              <el-input
+                v-model="registerForm.phone"
+                placeholder=" "
                 :prefix-icon="Phone"
               />
               <div class="auth-form-label">手机号</div>
             </div>
-            
+
             <div class="auth-input">
-              <el-input 
-                v-model="registerForm.username" 
-                placeholder=" " 
+              <el-input
+                v-model="registerForm.username"
+                placeholder=" "
                 :prefix-icon="User"
               />
               <div class="auth-form-label">用户名</div>
             </div>
-            
+
             <div class="auth-input">
-              <el-input 
-                v-model="registerForm.password" 
+              <el-input
+                v-model="registerForm.password"
                 placeholder=" "
-                type="password" 
+                type="password"
                 :prefix-icon="Lock"
               />
               <div class="auth-form-label">密码</div>
             </div>
-            
+
             <div class="auth-input">
-              <el-input 
-                v-model="confirmPassword" 
+              <el-input
+                v-model="confirmPassword"
                 placeholder=" "
-                type="password" 
+                type="password"
                 :prefix-icon="Lock"
               />
               <div class="auth-form-label">确认密码</div>
             </div>
-            
+
             <div class="auth-error" v-if="registerError">{{ registerError }}</div>
-            
+
             <div class="button-container">
-              <el-button 
-                class="auth-button active-glow" 
-                type="primary" 
-                @click="handleRegister" 
+              <el-button
+                class="auth-button active-glow"
+                type="primary"
+                @click="handleRegister"
                 :loading="loading"
               >
                 注册
               </el-button>
             </div>
           </form>
-          
+
           <div class="auth-toggle">
             已有账号？ <router-link to="/login">返回登录</router-link>
           </div>
@@ -106,40 +106,53 @@ const handleRegister = async () => {
     registerError.value = '请确认密码';
     return;
   }
-  
+
   // 密码一致性验证
   if (registerForm.password !== confirmPassword.value) {
     registerError.value = '两次输入的密码不一致';
     return;
   }
-  
+
   // 手机号格式验证
   const phoneReg = /^1[3-9]\d{9}$/;
   if (!phoneReg.test(registerForm.phone)) {
     registerError.value = '手机号格式不正确';
     return;
   }
-  
+
   // 密码强度验证
   if (registerForm.password.length < 6) {
     registerError.value = '密码长度不能少于6位';
     return;
   }
-  
+
   try {
     loading.value = true;
     registerError.value = '';
-    
+
+    console.log('开始注册请求，数据:', registerForm);
+
     // 调用注册API
-    await register(registerForm);
-    
+    const response = await register(registerForm);
+
+    console.log('注册成功，响应:', response);
+
     ElMessage.success('注册成功，请登录');
-    
+
     // 跳转到登录页
     router.push('/login');
   } catch (error) {
     console.error('注册失败:', error);
-    registerError.value = error.message || '注册失败，请稍后再试';
+    console.error('错误详情:', error.response || error);
+
+    // 提取更详细的错误信息
+    if (error.response && error.response.data) {
+      registerError.value = error.response.data.message || '注册失败，请稍后再试';
+    } else if (error.message && error.message.includes('Network Error')) {
+      registerError.value = '网络错误，请检查服务器是否正常运行';
+    } else {
+      registerError.value = error.message || '注册失败，请稍后再试';
+    }
   } finally {
     loading.value = false;
   }
@@ -148,4 +161,4 @@ const handleRegister = async () => {
 
 <style scoped>
 /* 样式已在auth.css中定义 */
-</style> 
+</style>

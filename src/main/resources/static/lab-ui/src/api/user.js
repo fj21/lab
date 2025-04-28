@@ -8,11 +8,7 @@ import request from '../utils/request';
  * @returns {Promise}
  */
 export function login(data) {
-  return request({
-    url: '/user/login',
-    method: 'post',
-    data
-  });
+  return request.post('/user/login', data);
 }
 
 /**
@@ -24,11 +20,8 @@ export function login(data) {
  * @returns {Promise}
  */
 export function register(data) {
-  return request({
-    url: '/user/register',
-    method: 'post',
-    data
-  });
+  // Remove the /api prefix since it's already in the baseURL
+  return request.post('/user/register', data);
 }
 
 /**
@@ -36,10 +29,7 @@ export function register(data) {
  * @returns {Promise}
  */
 export function getUserInfo() {
-  return request({
-    url: '/user/info',
-    method: 'get'
-  });
+  return request.get('/user/info');
 }
 
 /**
@@ -48,10 +38,7 @@ export function getUserInfo() {
  * @returns {Promise}
  */
 export function getUserBasicInfo(userId) {
-  return request({
-    url: `/user/basic/${userId}`,
-    method: 'get'
-  });
+  return request.get(`/user/basic/${userId}`);
 }
 
 /**
@@ -63,9 +50,5 @@ export function getUserBasicInfo(userId) {
  * @returns {Promise}
  */
 export function updateUserInfo(data) {
-  return request({
-    url: '/user/update',
-    method: 'put',
-    data
-  });
-} 
+  return request.put('/user/update', data);
+}

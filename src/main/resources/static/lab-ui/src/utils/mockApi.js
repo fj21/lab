@@ -25,16 +25,16 @@ export function handleMockRequest(url, method, data, params) {
   console.log(`[Mock API] ${method} ${url}`, { data, params });
 
   // Handle different API endpoints
-  if (url.startsWith('/api/post/section') && method.toLowerCase() === 'get') {
+  if (url.startsWith('/post/section') && method.toLowerCase() === 'get') {
     return Promise.resolve(getMockPosts(params?.category, params?.lastPostId || 0));
   }
 
-  if (url.startsWith('/api/post/detail/') && method.toLowerCase() === 'get') {
+  if (url.startsWith('/post/detail/') && method.toLowerCase() === 'get') {
     const postId = url.split('/').pop();
     return Promise.resolve(getMockPostDetail(postId));
   }
 
-  if (url === '/api/user/info' && method.toLowerCase() === 'get') {
+  if (url === '/user/info' && method.toLowerCase() === 'get') {
     return Promise.resolve(getMockUserInfo());
   }
 
@@ -54,9 +54,9 @@ export function shouldMockRequest(url) {
 
   // List of endpoints to mock
   const mockedEndpoints = [
-    '/api/post/section',
-    '/api/post/detail/',
-    '/api/user/info'
+    '/post/section',
+    '/post/detail/',
+    '/user/info'
   ];
 
   return mockedEndpoints.some(endpoint => url.startsWith(endpoint));

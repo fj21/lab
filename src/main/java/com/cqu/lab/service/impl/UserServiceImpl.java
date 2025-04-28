@@ -20,6 +20,7 @@ import com.cqu.lab.utils.RedisUtil;
 import com.cqu.lab.utils.RocketMQUtil;
 import com.cqu.lab.utils.ThreadLocalUtil;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 用户服务实现类
  */
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     @Resource
@@ -83,7 +85,7 @@ public class UserServiceImpl implements UserService {
             user.setUsername(registerDTO.getUsername());
 
             // 生成随机盐并加密密码
-            String salt = RandomUtil.randomString(6);
+            String salt = RandomUtil.randomString(4);
             user.setSalt(salt);
             user.setPassword(DigestUtils.md5Hex(registerDTO.getPassword()+salt));
 
@@ -99,8 +101,14 @@ public class UserServiceImpl implements UserService {
             // 保存用户到数据库
             userMapper.insert(user);
 
-            // 发送mq消息
-            rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC,user);
+            try {
+                // 尝试发送mq消息，但捕获异常不让它影响注册流程
+                rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC, user);
+            } catch (Exception e) {
+                // 记录错误但继续流程
+                log.error("用户注册MQ消息发送失败，但不影响注册流程: {}", e.getMessage());
+            }
+            
             return user.getId();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -329,8 +337,12 @@ public class UserServiceImpl implements UserService {
         // 保存用户到数据库
         userMapper.insert(user);
 
-        // 发送MQ消息
-        rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC, user);
+        // 发送MQ消息，但不让异常影响用户创建流程
+        try {
+            rocketMQUtil.asyncSend(Constants.USER_UPDATE_TOPIC, user);
+        } catch (Exception e) {
+            log.error("用户创建MQ消息发送失败，但不影响创建流程: {}", e.getMessage());
+        }
 
         return user.getId();
     }

@@ -7,7 +7,7 @@ import request from '../utils/request';
  * @returns {Promise} - 返回资源列表
  */
 export function getResources(category = null, lastResourceId = 0) {
-  return request.get('/api/resource/list', {
+  return request.get('/resource/list', {
     params: {
       category,
       lastResourceId
@@ -21,7 +21,7 @@ export function getResources(category = null, lastResourceId = 0) {
  * @returns {Promise} - 返回资源详情
  */
 export function getResourceDetail(resourceId) {
-  return request.get('/api/resource/detail', {
+  return request.get('/resource/detail', {
     params: {
       resourceId
     }
@@ -44,16 +44,16 @@ export function uploadResource(type, title, description, content, coverFile, res
   formData.append('title', title);
   formData.append('description', description);
   formData.append('content', content);
-  
+
   if (coverFile) {
     formData.append('coverFile', coverFile);
   }
-  
+
   if (resourceFile) {
     formData.append('resourceFile', resourceFile);
   }
-  
-  return request.post('/api/resource/upload', formData, {
+
+  return request.post('/resource/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -67,7 +67,7 @@ export function uploadResource(type, title, description, content, coverFile, res
  * @returns {Promise} - 返回更新结果
  */
 export function updateResource(resourceId, data) {
-  return request.put(`/api/resource/${resourceId}`, data);
+  return request.put(`/resource/${resourceId}`, data);
 }
 
 /**
@@ -76,5 +76,5 @@ export function updateResource(resourceId, data) {
  * @returns {Promise} - 返回删除结果
  */
 export function deleteResource(resourceId) {
-  return request.delete(`/api/resource/${resourceId}`);
+  return request.delete(`/resource/${resourceId}`);
 }
