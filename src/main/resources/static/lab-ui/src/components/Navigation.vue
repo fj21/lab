@@ -36,11 +36,11 @@
           <i class="el-icon-search"></i>
         </div>
 
-        <div class="user-section" v-if="userInfo">
+        <div class="user-section" v-if="isLoggedIn">
           <el-dropdown trigger="click">
             <div class="user-info">
-              <el-avatar :src="userInfo.image" size="small"></el-avatar>
-              <span class="username">{{ userInfo.username }}</span>
+              <el-avatar :src="userInfo?.avatar || 'https://randomuser.me/api/portraits/men/1.jpg'" size="small"></el-avatar>
+              <span class="username">{{ userInfo?.username || '用户' }}</span>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -49,6 +49,10 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+        </div>
+        <div class="auth-buttons" v-else>
+          <el-button size="small" type="primary" @click="navigateTo('/login')">登录</el-button>
+          <el-button size="small" @click="navigateTo('/register')">注册</el-button>
         </div>
 
         <div class="menu-icon" @click="toggleMobileMenu">
@@ -125,6 +129,11 @@ const mobileMenuOpen = ref(false);
 const searchOpen = ref(false);
 const searchQuery = ref('');
 
+// Check if user is logged in
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('token');
+});
+
 // Check if a nav item is active
 const isActive = (path) => {
   if (path === '/home' && route.path === '/') {
@@ -190,7 +199,7 @@ const changeLang = (lang) => {
 
 // Show user profile
 const showUserProfile = () => {
-  ElMessage.info('个人资料功能即将上线');
+  router.push('/user/profile');
 };
 
 // Handle logout
@@ -200,31 +209,75 @@ const handleLogout = () => {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    // Clear token
+    // Clear token and user info
     localStorage.removeItem('token');
-    // Redirect to login page
-    router.push('/login');
+    localStorage.removeItem('userId');
+    userInfo.value = null;
+
+    // Show success message
     ElMessage.success('已退出登录');
+
+    // Redirect to home page
+    router.push('/home');
   }).catch(() => {});
+};
+
+// Fetch user info
+const fetchUserInfo = async () => {
+  if (isLoggedIn.value) {
+    try {
+      console.log('Fetching user info...');
+      const response = await getUserInfo();
+      console.log('User info response:', response);
+
+      if (response.code === 200 && response.data) {
+        userInfo.value = response.data;
+
+        // Store userId in localStorage if not already there
+        if (!localStorage.getItem('userId') && response.data.id) {
+          localStorage.setItem('userId', response.data.id);
+          console.log('User ID stored from fetchUserInfo:', response.data.id);
+        }
+      } else {
+        console.error('Failed to get user info, response code:', response.code);
+        // If we get an error response, clear the token
+        //localStorage.removeItem('token');
+        //localStorage.removeItem('userId');
+        userInfo.value = null;
+      }
+    } catch (error) {
+      console.error('Failed to fetch user info:', error);
+      console.error('Error details:', error.message);
+
+      // If there's an error (like token expired), clear the token
+      //localStorage.removeItem('token');
+      //localStorage.removeItem('userId');
+      userInfo.value = null;
+    }
+  } else {
+    console.log('User not logged in, skipping fetchUserInfo');
+  }
 };
 
 // Fetch user info on mount
 onMounted(async () => {
   try {
-    // In a real app, we would fetch user info from the API
-    // For now, use fake data
-    userInfo.value = {
-      username: '张教授',
-      image: 'https://randomuser.me/api/portraits/men/1.jpg'
-    };
-
     // Check if language preference is stored in localStorage
     const savedLang = localStorage.getItem('language');
     if (savedLang) {
       currentLang.value = savedLang;
     }
+
+    // Add a small delay before fetching user info to ensure token is properly set
+    setTimeout(async () => {
+      // Fetch user info if logged in
+      if (isLoggedIn.value) {
+        console.log('Token found, fetching user info...');
+        await fetchUserInfo();
+      }
+    }, 500);
   } catch (error) {
-    console.error('获取用户信息失败:', error);
+    console.error('初始化失败:', error);
   }
 });
 </script>
@@ -354,6 +407,11 @@ onMounted(async () => {
   margin-left: 8px;
   color: #e6edf3;
   font-size: 14px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 /* Mobile menu */

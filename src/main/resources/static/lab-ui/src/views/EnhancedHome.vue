@@ -16,6 +16,9 @@
         <div class="cyberpunk-overlay"></div>
         <div class="cyberpunk-background"></div>
         <div class="cyberpunk-grid"></div>
+
+
+
         <div class="cyberpunk-content">
           <div class="slogan-container">
             <div class="chinese-slogan">{{ cyberpunkData.slogan.chinese }}</div>
@@ -267,6 +270,8 @@ const handleScroll = () => {
   }
 };
 
+
+
 // 实际数据
 const newsItems = ref([]);
 const noticeItems = ref([]);
@@ -462,6 +467,8 @@ onUnmounted(() => {
   position: relative;
   overflow: hidden;
 }
+
+
 
 .cyberpunk-overlay {
   position: absolute;

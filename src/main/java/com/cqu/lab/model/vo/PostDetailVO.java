@@ -24,6 +24,11 @@ public class PostDetailVO implements Serializable {
     private Long authorId;
 
     /**
+     * 帖子标题
+     */
+    private String title;
+
+    /**
      * 文字内容
      */
     private String content;

@@ -7,6 +7,7 @@
     <resultMap id="BaseResultMap" type="com.cqu.lab.model.entity.Post">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="userId" column="user_id" jdbcType="BIGINT"/>
+            <result property="title" column="title" jdbcType="VARCHAR"/>
             <result property="content" column="content" jdbcType="VARCHAR"/>
             <result property="category" column="category" jdbcType="TINYINT"/>
             <result property="mediaType" column="media_type" jdbcType="TINYINT"/>
@@ -21,7 +22,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,user_id,content,
+        id,user_id,title,content,
         category,media_type,visibility,
         like_count,collect_count,comment_count,
         view_count,is_deleted,created_at,

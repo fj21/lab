@@ -16,12 +16,15 @@ import java.util.List;
 @Mapper
 public interface PostMapper extends BaseMapper<Post> {
 
-    @Select("SELECT * FROM post WHERE category = #{category} AND id < #{lastPostId} " +
+    @Select("SELECT * FROM post WHERE category = #{category} AND id <= #{lastPostId} " +
             "ORDER BY created_at DESC LIMIT 50")
     List<Post> selectSectionPost(Integer category, Integer lastPostId);
 
     @Select("SELECT id FROM post ORDER BY created_at DESC LIMIT 1")
     Integer selectNewestPost();
+
+    @Select("SELECT * FROM post WHERE  id <= #{lastPostId} ORDER BY created_at DESC LIMIT 50")
+    List<Post> selectSectionPostWithoutCategory(Integer lastPostId);
 }
 
 

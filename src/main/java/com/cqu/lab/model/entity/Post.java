@@ -27,6 +27,11 @@ public class Post implements Serializable {
     private Long userId;
 
     /**
+     * 帖子标题
+     */
+    private String title;
+
+    /**
      * 文字内容
      */
     private String content;

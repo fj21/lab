@@ -12,20 +12,34 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    console.log('Sending request:', {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL,
-      data: config.data,
-      params: config.params,
-      headers: config.headers
-    });
-
     // 从localStorage获取token，添加到请求头
     const token = localStorage.getItem('token');
+
+    console.log('Request interceptor:', {
+      url: config.url,
+      method: config.method,
+      token: token ? localStorage.getItem('token') : 'Not found',
+      userId: localStorage.getItem('userId') || 'Not found'
+    });
+
     if (token) {
+      // Add token to headers in multiple formats to ensure compatibility
       config.headers['Authorization'] = `Bearer ${token}`;
-      config.headers['token'] = token; // Add token as a separate header
+      config.headers['token'] = token;
+
+      // Add userId to the header if available
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        config.headers['userId'] = userId;
+      }
+
+      console.log('Token added to request headers:', {
+        'Authorization': `Bearer ${token}`,
+        'token': token,
+        'userId': userId || 'Not available'
+      });
+    } else {
+      console.warn('No token found in localStorage for request:', config.url);
     }
 
     // 如果是模拟数据的请求，添加标记
@@ -45,17 +59,29 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const res = response.data;
-    console.log('Response received:', response);
-
+    console.log('Response received for URL:', response.config.url, 'Status:', response.status);
+    console.log('Response Data:',response.data);
     // 如果返回的状态码不是200，则判断为错误
     if (res.code !== 200) {
+      console.error('API error response:', {
+        url: response.config.url,
+        code: res.code,
+        message: res.message
+      });
+
       ElMessage.error(res.message || '请求失败');
 
       // 401: 未登录或token过期
       if (res.code === 401) {
+        console.warn('Authentication error (401) detected, clearing token and redirecting to login');
         // 清除登录信息
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        // localStorage.removeItem('token');
+        // localStorage.removeItem('userId');
+
+        // Use router instead of direct window location change
+        setTimeout(() => {
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        }, 100);
       }
 
       return Promise.reject(new Error(res.message || '请求失败'));
@@ -64,36 +90,47 @@ request.interceptors.response.use(
     }
   },
   (error) => {
-    console.error('响应错误:', error);
-    console.error('错误详情:', {
+    console.error('Response error:', error);
+    console.error('Error details:', {
+      url: error.config?.url,
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
-      data: error.response?.data,
-      config: error.config
+      data: error.response?.data
     });
 
     let message = '网络错误，请稍后再试';
 
     if (error.message && error.message.includes('Network Error')) {
       message = '网络连接失败，请检查服务器是否正常运行';
-      console.error('网络连接失败，可能的原因：');
-      console.error('1. 后端服务器未启动');
-      console.error('2. 后端服务器端口配置不正确');
-      console.error('3. 跨域问题未解决');
-      console.error('4. 防火墙或网络问题');
+      console.error('Network connection failed, possible reasons:');
+      console.error('1. Backend server not started');
+      console.error('2. Incorrect backend server port configuration');
+      console.error('3. CORS issues');
+      console.error('4. Firewall or network issues');
     } else if (error.response?.data?.message) {
       message = error.response.data.message;
     } else if (error.message) {
       message = error.message;
     }
 
-    ElMessage.error(message);
+    // Don't show error message for CSRF errors to avoid confusing the user
+    if (!(error.response?.data?.code === 'BAD_CSRF_REQUEST')) {
+      ElMessage.error(message);
+    } else {
+      console.warn('CSRF error detected, but not showing error message to user');
+    }
 
-    // 处理401未授权
+    // 只处理401未授权，不处理403 CSRF错误
     if (error.response?.status === 401) {
+      console.warn('Authentication error (401) detected in error handler, clearing token and redirecting to login');
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('userId');
+
+      // Redirect with the current path as the redirect parameter
+      setTimeout(() => {
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+      }, 100);
     }
 
     return Promise.reject(error);

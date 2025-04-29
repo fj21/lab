@@ -1,6 +1,8 @@
 package com.cqu.lab.controller;
 
+import cn.hutool.json.JSONUtil;
 import com.cqu.lab.model.common.Result;
+import com.cqu.lab.model.dto.PostCreateDTO;
 import com.cqu.lab.model.entity.Post;
 import com.cqu.lab.model.vo.PostDetailVO;
 import com.cqu.lab.model.vo.PostListVO;
@@ -27,7 +29,8 @@ public class PostController {
      */
     @GetMapping("/section")
     public Result<PostListVO> getSectionPosts(@RequestParam(required = false) Integer category,
-                                              @RequestParam(required = false, defaultValue = "0") Integer lastPostId){
+                                              @RequestParam(defaultValue = "0") Integer lastPostId){
+        log.info("获取帖子列表，section:{},lastPostId:{}",category,lastPostId);
         PostListVO sectionPostList = postService.getSectionPosts(category,lastPostId);
         return Result.success(sectionPostList);
     }
@@ -45,17 +48,17 @@ public class PostController {
 
     /**
      * 发布帖子（视频，图文）
-     * @param type 类型 0-图片  1-视频
-     * @return 是否成功
+     * @param postCreateDTO 帖子DTO
+     * @param files 文件列表
+     * @return
      */
     @PostMapping("/post")
-    public Result<Boolean> post(@RequestParam Integer type,
-                                @RequestParam Integer category,
-                                @RequestParam Integer visibility,
-                                @RequestParam String  content,
-                                @RequestParam MultipartFile[] files
-                                ){
-        Boolean result = postService.post(type,category,visibility,content,files);
+    public Result<Boolean> post(@RequestPart PostCreateDTO postCreateDTO,
+                                @RequestPart(value = "files",required = false) MultipartFile[] files){
+        // Handle null files array
+        log.info("发布帖子，postCreateDTO:{}", JSONUtil.toJsonStr(postCreateDTO));
+        MultipartFile[] safeFiles = files != null ? files : new MultipartFile[0];
+        Boolean result = postService.post(postCreateDTO,safeFiles);
         return Result.success(result);
     }
 

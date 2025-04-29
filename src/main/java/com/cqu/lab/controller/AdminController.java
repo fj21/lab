@@ -49,7 +49,8 @@ public class AdminController {
     @GetMapping("/posts")
     public Result<PostListVO> getAllPosts(
             @RequestParam(required = false) Integer category,
-            @RequestParam(required = false, defaultValue = "0") Integer lastPostId) {
+            @RequestParam(defaultValue = "0") Integer lastPostId) {
+        log.info("");
         PostListVO postListVO = postService.getSectionPosts(category, lastPostId);
         return Result.success(postListVO);
     }

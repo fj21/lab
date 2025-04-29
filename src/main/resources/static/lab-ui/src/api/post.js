@@ -40,11 +40,7 @@ export function getPostDetail(postId) {
  */
 export function createPost(postData) {
   const formData = new FormData();
-  formData.append('type', postData.type);
-  formData.append('category', postData.category);
-  formData.append('visibility', postData.visibility);
-  formData.append('content', postData.content);
-
+  formData.append('postCreateDTO', new Blob([JSON.stringify(postData)],{type: "application/json"}));
   if (postData.files && postData.files.length > 0) {
     postData.files.forEach(file => {
       formData.append('files', file);

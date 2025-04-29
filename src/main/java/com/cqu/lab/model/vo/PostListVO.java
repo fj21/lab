@@ -23,6 +23,11 @@ public class PostListVO implements Serializable {
         private Long id;
 
         /**
+         * 帖子标题
+         */
+        private String title;
+
+        /**
          * 作者简略信息
          */
         UserBasicVO userBasicVO;

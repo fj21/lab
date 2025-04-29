@@ -6,6 +6,7 @@ import com.cqu.lab.mapper.PostCollectMapper;
 import com.cqu.lab.mapper.PostLikeMapper;
 import com.cqu.lab.mapper.PostMediaMapper;
 import com.cqu.lab.model.dto.ContentUpdateDTO;
+import com.cqu.lab.model.dto.PostCreateDTO;
 import com.cqu.lab.model.entity.Post;
 import com.cqu.lab.model.entity.PostCollect;
 import com.cqu.lab.model.entity.PostLike;
@@ -58,8 +59,15 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Override
     public PostListVO getSectionPosts(Integer category,Integer lastPostId) {
         //1.根据category和lastPostId取50条数据
+        //如果category为空，则默认查询全部的数据
         if(lastPostId.equals(0)) lastPostId = postMapper.selectNewestPost();
-        List<Post> posts = postMapper.selectSectionPost(category, lastPostId);
+        List<Post> posts = new ArrayList<>();
+        if(category == null){
+            posts = postMapper.selectSectionPostWithoutCategory(lastPostId);
+        }else {
+            posts = postMapper.selectSectionPost(category, lastPostId);
+        }
+
 
         if (posts == null || posts.isEmpty()) {
             return new PostListVO();
@@ -75,6 +83,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         for (Post post : posts) {
             PostListVO.PostVO postVO = new PostListVO.PostVO();
             postVO.setId(post.getId());
+            postVO.setTitle(post.getTitle());
             postVO.setContent(post.getContent());
             postVO.setMediaType(post.getMediaType());
             postVO.setLikeCount(post.getLikeCount());
@@ -121,6 +130,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         PostDetailVO postDetailVO = new PostDetailVO();
         postDetailVO.setId(post.getId());
         postDetailVO.setAuthorId(post.getUserId());
+        postDetailVO.setTitle(post.getTitle());
         postDetailVO.setContent(post.getContent());
         postDetailVO.setCategory(post.getCategory());
         postDetailVO.setMediaType(post.getMediaType());
@@ -194,18 +204,20 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     /**
      * 发布帖子
-     * @param type 类型 0-图片 1-视频
-     * @param category 分区
-     * @param visibility 可见性
-     * @param files 文件列表
-     * @return 是否发布成功
+     * @param postCreateDTO 发布帖子dto
+     * @return
      */
     @Override
-    public Boolean post(Integer type, Integer category, Integer visibility,String content, MultipartFile[] files) {
+    public Boolean post(PostCreateDTO postCreateDTO,MultipartFile[] files) {
+        Integer type = postCreateDTO.getType();
+        String title = postCreateDTO.getTitle();
+        Integer category = postCreateDTO.getCategory();
+        Integer visibility = postCreateDTO.getVisibility();
+        String content = postCreateDTO.getContent();
         // 参数校验
-        if (files == null || files.length == 0) {
-            return false;
-        }
+//        if (files == null || files.length == 0) {
+//            return false;
+//        }
 
         // 如果是图片类型，限制最多18张
         if (type == 0 && files.length > 18) {
@@ -215,6 +227,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         // 创建帖子实体
         Post post = new Post();
         post.setUserId(Long.valueOf(ThreadLocalUtil.getUserId()));
+        post.setTitle(title);
         post.setContent(content); // 默认空内容，可以在前端添加文字内容
         post.setCategory(category);
         post.setMediaType(type);
@@ -228,11 +241,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         post.setUpdatedAt(new Date());
 
         // 保存帖子
-        boolean saved = save(post);
-        if (!saved) {
+        int insert = postMapper.insert(post);
+        if (insert == 0) {
             return false;
         }
-
+        log.info("保存帖子成功，postid：{}",post.getId());
         // 处理文件上传
         try {
             log.info("Processing {} files for post ID: {}", files.length, post.getId());
@@ -271,7 +284,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
                         i++; // 跳过下一个文件，因为它是封面
                     } else {
                         // 如果没有提供封面，可以使用默认封面或生成一个
-                        coverUrl = "https://your-bucket-name.oss-cn-beijing.aliyuncs.com/default/video_cover.jpg";
+                        coverUrl = "https://cqulab.oss-cn-chengdu.aliyuncs.com/default/video_cover.jpg";
                     }
                 }
 

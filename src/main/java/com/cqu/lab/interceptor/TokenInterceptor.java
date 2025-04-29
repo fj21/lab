@@ -28,10 +28,25 @@ public class TokenInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String requestURI = request.getRequestURI();
         String userId = request.getHeader("userId");
-        if(userId != null){
+
+        log.debug("TokenInterceptor: Processing request URI: {}", requestURI);
+        log.debug("TokenInterceptor: UserId header: {}", userId);
+
+        if (userId != null) {
+            log.debug("TokenInterceptor: Setting userId in ThreadLocal: {}", userId);
             ThreadLocalUtil.setUserId(Integer.valueOf(userId));
+        } else {
+            log.debug("TokenInterceptor: No userId found in request headers");
+            // Try to get userId from request attributes (set by LoginInterceptor)
+            Object userIdAttr = request.getAttribute("userId");
+            if (userIdAttr != null) {
+                log.debug("TokenInterceptor: Using userId from request attributes: {}", userIdAttr);
+                ThreadLocalUtil.setUserId(Integer.valueOf(userIdAttr.toString()));
+            }
         }
+
         return true;
     }
 

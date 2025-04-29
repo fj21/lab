@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import AdminDashboard from '../views/AdminDashboard.vue'
 
 // 路由配置
@@ -99,6 +100,12 @@ const routes = [
       requiresAuth: false,
       requiresAdmin: false
     }
+  },
+  {
+    path: '/user/profile',
+    name: 'UserProfile',
+    component: () => import('../views/UserProfile.vue'),
+    meta: { requiresAuth: true } // 需要登录才能访问
   }
 ];
 
@@ -119,23 +126,67 @@ const router = createRouter({
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('token')
-  const isAdmin = localStorage.getItem('userRole') === 'admin'
+  const token = localStorage.getItem('token');
+  const isAuthenticated = !!token;
+  const isAdmin = localStorage.getItem('userRole') === 'admin';
+  const userId = localStorage.getItem('userId');
 
+  console.log('Router guard:', {
+    to: to.path,
+    from: from.path,
+    isAuthenticated,
+    hasUserId: !!userId,
+    requiresAuth: to.matched.some(record => record.meta.requiresAuth),
+    requiresAdmin: to.matched.some(record => record.meta.requiresAdmin)
+  });
+
+  // Special case for login and register pages
+  if (to.path === '/login' || to.path === '/register') {
+    if (isAuthenticated) {
+      console.log('Already authenticated, redirecting to home');
+      next('/home');
+    } else {
+      next();
+    }
+    return;
+  }
+
+  // Check for admin routes
   if (to.matched.some(record => record.meta.requiresAdmin)) {
-    if (!isAuthenticated || !isAdmin) {
-      next('/login')
-    } else {
-      next()
-    }
-  } else if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isAuthenticated) {
-      next('/login')
+      console.log('Redirecting to login: authentication required for admin page');
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+    } else if (!isAdmin) {
+      console.log('User is not an admin, redirecting to home');
+      ElMessage.error('您没有权限访问该页面');
+      next('/home');
     } else {
-      next()
+      next();
     }
-  } else {
-    next()
+  }
+  // Check for authenticated routes
+  else if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      console.log('Redirecting to login: authentication required');
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+    } else {
+      // Check if we have a userId, which is required for most authenticated operations
+      if (!userId && to.path !== '/home') {
+        console.warn('No userId found in localStorage, attempting to fetch user info');
+        // We could try to fetch user info here, but for now just continue
+      }
+      next();
+    }
+  }
+  // Public routes
+  else {
+    next();
   }
 })
 

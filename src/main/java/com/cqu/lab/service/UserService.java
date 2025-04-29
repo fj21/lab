@@ -99,4 +99,11 @@ public interface UserService {
      * @return 用户总数
      */
     long count();
+
+    /**
+     * 根据token获取用户ID
+     * @param token 用户token
+     * @return 用户ID字符串
+     */
+    String getUserIdByToken(String token);
 }

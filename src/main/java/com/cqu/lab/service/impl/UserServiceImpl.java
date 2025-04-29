@@ -6,11 +6,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cqu.lab.constant.Constants;
 import com.cqu.lab.mapper.UserMapper;
+import com.cqu.lab.mapper.UserRoleMapper;
 import com.cqu.lab.model.dto.UserCreateDTO;
 import com.cqu.lab.model.dto.UserLoginDTO;
 import com.cqu.lab.model.dto.UserRegisterDTO;
 import com.cqu.lab.model.dto.UserUpdateDTO;
 import com.cqu.lab.model.entity.User;
+import com.cqu.lab.model.entity.UserRole;
 import com.cqu.lab.model.vo.UserBasicVO;
 import com.cqu.lab.model.vo.UserListVO;
 import com.cqu.lab.model.vo.UserVO;
@@ -53,6 +55,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private UserRoleMapper userRoleMapper;
 
     /**
      * 用户注册
@@ -100,6 +105,10 @@ public class UserServiceImpl implements UserService {
 
             // 保存用户到数据库
             userMapper.insert(user);
+            UserRole userRole = new UserRole();
+            userRole.setUserId(user.getId());
+            userRole.setRole(0);
+            userRoleMapper.insert(userRole);
 
             try {
                 // 尝试发送mq消息，但捕获异常不让它影响注册流程
@@ -108,7 +117,7 @@ public class UserServiceImpl implements UserService {
                 // 记录错误但继续流程
                 log.error("用户注册MQ消息发送失败，但不影响注册流程: {}", e.getMessage());
             }
-            
+
             return user.getId();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -387,7 +396,8 @@ public class UserServiceImpl implements UserService {
         if (userUpdateDTO.getRole() != null) {
             // 设置用户角色
             // 这里假设角色信息存储在用户表中的某个字段，实际项目中可能需要调整
-            // updateUser.setRole(userUpdateDTO.getRole());
+            UserRole userRole = userRoleMapper.selectByUserId(userUpdateDTO.getId());
+            userRole.setRole(userUpdateDTO.getRole());
         }
 
         if (userUpdateDTO.getImage() != null) {
@@ -467,5 +477,25 @@ public class UserServiceImpl implements UserService {
     @Override
     public long count() {
         return userMapper.selectCount(new LambdaQueryWrapper<User>());
+    }
+
+    /**
+     * 根据token获取用户ID
+     * @param token 用户token
+     * @return 用户ID字符串
+     */
+    @Override
+    public String getUserIdByToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 从Redis中获取用户ID
+            return stringRedisTemplate.opsForValue().get(Constants.REDIS_TOEKN_KEY + token);
+        } catch (Exception e) {
+            log.error("从Redis获取用户ID失败: {}", e.getMessage(), e);
+            return null;
+        }
     }
 }

@@ -207,7 +207,7 @@ const loadNewsData = async (reset = true) => {
         const formattedPosts = posts.map(post => ({
           id: post.id,
           date: formatDate(post.createdAt),
-          title: post.content.split('\n')[0] || '无标题', // 使用内容的第一行作为标题
+          title: post.title, // 使用内容的第一行作为标题
           content: post.content,
           category: post.category,
           categoryName: getCategoryName(post.category),
@@ -317,8 +317,6 @@ const showCreateNewsCategoryDialog = (title, content) => {
 // 创建新闻帖子
 const createNewsPost = async (title, content, category) => {
   try {
-    const fullContent = `${title}\n\n${content}`;
-
     const loadingInstance = ElLoading.service({
       text: '正在发布...',
       background: 'rgba(0, 0, 0, 0.7)'
@@ -326,9 +324,11 @@ const createNewsPost = async (title, content, category) => {
 
     const postData = {
       type: 0, // 图片类型
+      title: title,
       category: category,
       visibility: 0, // 公开
-      content: fullContent,
+      content: content,
+      // todo 新闻上传图片
       files: [] // 暂不上传文件
     };
 

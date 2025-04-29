@@ -3,6 +3,7 @@ package com.cqu.lab.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.cqu.lab.model.dto.ContentUpdateDTO;
+import com.cqu.lab.model.dto.PostCreateDTO;
 import com.cqu.lab.model.entity.Post;
 import com.cqu.lab.model.vo.PostDetailVO;
 import com.cqu.lab.model.vo.PostListVO;
@@ -35,14 +36,10 @@ public interface PostService extends IService<Post> {
 
     /**
      * 发布帖子
-     * @param type 类型
-     * @param category 分类
-     * @param visibility 可见性
-     * @param content 内容
-     * @param files 文件列表
+     * @param postCreateDTO 发布帖子dto
      * @return 是否成功
      */
-    Boolean post(Integer type, Integer category, Integer visibility, String content, MultipartFile[] files);
+    Boolean post(PostCreateDTO postCreateDTO,MultipartFile[] files);
 
     /**
      * 点赞帖子

@@ -192,10 +192,10 @@ const loadPosts = async () => {
         const formattedPosts = posts.map(post => ({
           id: post.id,
           date: formatDate(post.createdAt),
-          title: post.content.split('\n')[0] || '无标题', // 使用内容的第一行作为标题
+          title: post.title, // 使用内容的第一行作为标题
           content: post.content,
           type: getCategoryType(post.category),
-          summary: getSummary(post.content),
+          summary: post.content,
           coverUrl: post.coverUrl || getRandomImage(post.id),
           mediaList: post.mediaVOList || []
         }));
@@ -267,18 +267,6 @@ const getCategoryType = (category) => {
   return typeMap[category] || 'news';
 };
 
-// 从内容中提取摘要
-const getSummary = (content) => {
-  if (!content) return '';
-
-  const lines = content.split('\n').filter(line => line.trim());
-  if (lines.length > 1) {
-    return lines[1]; // 使用第二行作为摘要
-  }
-
-  // 如果没有第二行，则截取第一行的一部分作为摘要
-  return content.length > 50 ? content.substring(0, 50) + '...' : content;
-};
 
 // 格式化日期
 const formatDate = (dateStr) => {
